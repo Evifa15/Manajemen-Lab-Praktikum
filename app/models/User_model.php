@@ -85,4 +85,28 @@ class User_model {
         $this->db->execute();
         return $this->db->rowCount();
     }
+
+    // --- Metode BARU untuk Pagination ---
+    /**
+     * Mengambil user untuk halaman tertentu.
+     * @param int $offset Offset (mulai dari baris ke berapa).
+     * @param int $limit Jumlah baris per halaman.
+     * @return array Array data user.
+     */
+    public function getUsersPaginated($offset, $limit) {
+        $this->db->query('SELECT * FROM ' . $this->table . ' LIMIT :limit OFFSET :offset');
+        $this->db->bind(':limit', $limit, PDO::PARAM_INT);
+        $this->db->bind(':offset', $offset, PDO::PARAM_INT);
+        return $this->db->resultSet();
+    }
+    
+    /**
+     * Menghitung total jumlah user.
+     * @return int Total jumlah user.
+     */
+    public function countAllUsers() {
+        $this->db->query('SELECT COUNT(*) AS total FROM ' . $this->table);
+        return $this->db->single()['total'];
+    }
+    // --- Akhir Metode BARU ---
 }

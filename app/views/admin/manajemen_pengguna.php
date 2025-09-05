@@ -5,9 +5,6 @@
         <div class="table-controls-container">
             <div class="search-and-filter">
                 <input type="text" id="searchInput" placeholder="Cari pengguna...">
-                <button class="filter-button" id="filterBtn">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
-                </button>
             </div>
             <button class="add-button" id="addUserBtn">+ Tambah Pengguna</button>
         </div>
@@ -25,7 +22,12 @@
             </thead>
             <tbody>
                 <?php if (isset($data['users']) && is_array($data['users']) && !empty($data['users'])): ?>
-                    <?php $no = 1; ?>
+                    <?php 
+                    $no = 1;
+                    if ($data['halaman_aktif'] > 1) {
+                        $no = ($data['halaman_aktif'] - 1) * 10 + 1;
+                    }
+                    ?>
                     <?php foreach ($data['users'] as $user): ?>
                     <tr>
                         <td><?= $no++; ?></td>
@@ -50,13 +52,15 @@
                 <?php endif; ?>
             </tbody>
         </table>
-    
+        
         <div class="pagination-container">
-            <a href="#" class="pagination-btn disabled">Sebelumnya</a>
+            <a href="<?= BASEURL; ?>/admin/pengguna/<?= max(1, $data['halaman_aktif'] - 1); ?>" class="pagination-btn <?= $data['halaman_aktif'] <= 1 ? 'disabled' : ''; ?>">Sebelumnya</a>
             <div class="page-numbers">
-                <a href="#" class="page-link active">1</a>
+                <?php for($i = 1; $i <= $data['total_halaman']; $i++): ?>
+                    <a href="<?= BASEURL; ?>/admin/pengguna/<?= $i; ?>" class="page-link <?= $data['halaman_aktif'] == $i ? 'active' : ''; ?>"><?= $i; ?></a>
+                <?php endfor; ?>
             </div>
-            <a href="#" class="pagination-btn">Berikutnya</a>
+            <a href="<?= BASEURL; ?>/admin/pengguna/<?= min($data['total_halaman'], $data['halaman_aktif'] + 1); ?>" class="pagination-btn <?= $data['halaman_aktif'] >= $data['total_halaman'] ? 'disabled' : ''; ?>">Berikutnya</a>
         </div>
     </div>
     
@@ -79,7 +83,7 @@
                         <input type="text" id="id_pengguna" name="id_pengguna" placeholder="ID Pengguna" required>
                     </div>
                     <div class="form-group">
-                        <input type="password" id="password" name="password" placeholder="Kata Sandi" required>
+                        <input type="password" id="password" placeholder="Kata Sandi" required>
                     </div>
                 </div>
                 <div class="form-row">

@@ -273,30 +273,7 @@
     border-color: #4CAF50;
 }
 
-/* Styling for filter button */
-.filter-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #ffffff;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    cursor: pointer;
-    padding: 10px 15px;
-    transition: all 0.2s ease;
-}
-.filter-button:hover {
-    background-color: #f0f0f0;
-}
-.filter-button svg {
-    width: 20px;
-    height: 20px;
-    fill: #555;
-    transition: fill 0.2s ease;
-}
-.filter-button:hover svg {
-    fill: #4CAF50;
-}
+
 
 /* Table styles */
 .main-table-container {
@@ -639,3 +616,4 @@ table tr:hover {
     background-color: #dc2626; /* Merah lebih gelap saat hover */
     border-color: #dc2626;
 }
+

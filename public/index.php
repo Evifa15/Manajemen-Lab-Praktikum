@@ -45,9 +45,12 @@ if (empty($controller)) {
 elseif ($controller === 'admin') {
     if ($method === 'dashboard' || empty($method)) {
         $adminController->index();
-    } elseif ($method === 'pengguna') {
-        $adminController->manajemenPengguna();
-    } elseif ($method === 'tambah-pengguna') {
+    } 
+    // PERBAIKAN DI SINI: Meneruskan parameter ($param)
+    elseif ($method === 'pengguna') {
+        $adminController->manajemenPengguna($param);
+    } 
+    elseif ($method === 'tambah-pengguna') {
         $adminController->tambahPengguna();
     } elseif ($method === 'ubah-pengguna') { // Rute ubah pengguna tanpa parameter
         $adminController->ubahPengguna();

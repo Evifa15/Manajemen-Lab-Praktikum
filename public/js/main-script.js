@@ -148,5 +148,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     .catch(error => console.error('Error fetching user data:', error));
             });
         });
+
+        // ======================================
+        // LOGIKA PENCARIAN PENGGUNA (ASLI)
+        // ======================================
+        const searchInput = document.getElementById('searchInput');
+        const userTableBody = document.querySelector('#userTable tbody');
+
+        if (searchInput && userTableBody) {
+            searchInput.addEventListener('keyup', (event) => {
+                const searchTerm = event.target.value.toLowerCase();
+                const tableRows = userTableBody.querySelectorAll('tr');
+
+                tableRows.forEach(row => {
+                    const rowText = row.textContent.toLowerCase();
+                    
+                    if (rowText.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
     }
 });

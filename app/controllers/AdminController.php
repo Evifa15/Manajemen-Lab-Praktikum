@@ -19,12 +19,26 @@ class AdminController {
         $this->view('admin/index', $data);
     }
     
-    public function manajemenPengguna() {
+    // --- Metode manajemenPengguna yang diperbarui untuk paginasi ---
+    public function manajemenPengguna($halaman = 1) {
         $this->checkAuth();
         $userModel = new User_model();
+
+        // PERBAIKAN DI SINI: Memastikan $halaman adalah integer dan setidaknya 1
+        $halaman = max(1, (int)$halaman);
+
+        $limit = 10; // Tentukan jumlah baris per halaman
+        $offset = ($halaman - 1) * $limit;
+        
+        $totalPengguna = $userModel->countAllUsers();
+        $totalHalaman = ceil($totalPengguna / $limit);
+        
         $data = [
             'title' => 'Manajemen Pengguna',
-            'users' => $userModel->getAllUsers()
+            'users' => $userModel->getUsersPaginated($offset, $limit),
+            'total_halaman' => $totalHalaman,
+            'halaman_aktif' => $halaman,
+            'total_pengguna' => $totalPengguna
         ];
         $this->view('admin/manajemen_pengguna', $data);
     }
@@ -82,7 +96,7 @@ class AdminController {
         echo json_encode($user);
     }
     
-    // --- Metode BARU: Memproses form ubah pengguna ---
+    // --- Metode BARU: Memperbarui data pengguna ---
     public function ubahPengguna() {
         $this->checkAuth();
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
