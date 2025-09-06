@@ -617,3 +617,136 @@ table tr:hover {
     border-color: #dc2626;
 }
 
+/* Gaya untuk placeholder dan label file */
+.modal-content form input::placeholder {
+    color: #999;
+}
+
+.file-label {
+    display: block;
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+/* ======================================================= */
+/* GAYA UNTUK HALAMAN DETAIL BARANG */
+/* ======================================================= */
+.detail-card-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.detail-card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    display: flex;
+    gap: 2rem;
+    padding: 2rem;
+    max-width: 900px;
+    width: 100%;
+}
+
+.detail-card .image-section {
+    flex-shrink: 0;
+    width: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f0f2f5;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.detail-card .item-image {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+.no-image-placeholder {
+    text-align: center;
+    color: #999;
+}
+
+.no-image-placeholder svg {
+    margin-bottom: 10px;
+}
+
+.detail-card .info-section {
+    flex-grow: 1;
+}
+
+.detail-card h3 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1e1e1e;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-label {
+    font-size: 0.9rem;
+    color: #888;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.detail-value {
+    font-size: 1.1rem;
+    color: #333;
+    font-weight: 600;
+}
+
+.btn-secondary {
+    background-color: #f0f0f0;
+    color: #555;
+    border: 1px solid #f0f0f0;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #e0e0e0;
+}
+
+@media (max-width: 768px) {
+    .detail-card {
+        flex-direction: column;
+    }
+
+    .detail-card .image-section {
+        width: 100%;
+        height: auto;
+    }
+}
+
+/* Tombol kembali */
+.btn-secondary {
+    background-color: #4CAF50; /* hijau */
+    border-color: #4CAF50;
+    color: white;
+}
+.btn-secondary:hover {
+    background-color: #45a049;
+    border-color: #45a049;
+}
+
+
+

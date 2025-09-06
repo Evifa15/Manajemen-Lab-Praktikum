@@ -8,25 +8,14 @@ class User_model {
         $this->db = new Database;
     }
 
-    /**
-     * Mencari user berdasarkan username dan role.
-     * @param string $username
-     * @param string $role
-     * @return mixed Array data user jika ditemukan, false jika tidak.
-     */
     public function findUserByUsernameAndRole($username, $role) {
         $this->db->query('SELECT * FROM ' . $this->table . ' WHERE username = :username AND role = :role');
         $this->db->bind(':username', $username);
         $this->db->bind(':role', $role);
-        
         return $this->db->single();
     }
     
-    public function getAllUsers() {
-        $this->db->query('SELECT * FROM ' . $this->table);
-        return $this->db->resultSet();
-    }
-    
+    // ✅ PERBAIKAN: Mengembalikan kolom 'email'
     public function tambahUser($data) {
         $hashed_password = password_hash($data['password'], PASSWORD_DEFAULT);
         
@@ -44,7 +33,6 @@ class User_model {
     public function findUserByUsername($username) {
         $this->db->query('SELECT * FROM ' . $this->table . ' WHERE username = :username');
         $this->db->bind(':username', $username);
-        
         return $this->db->single();
     }
     
@@ -52,18 +40,16 @@ class User_model {
         $this->db->query('DELETE FROM ' . $this->table . ' WHERE id = :id');
         $this->db->bind(':id', $id);
         $this->db->execute();
-
         return $this->db->rowCount();
     }
     
-    // --- Metode BARU: Mengambil data pengguna berdasarkan ID ---
     public function getUserById($id) {
         $this->db->query('SELECT * FROM ' . $this->table . ' WHERE id = :id');
         $this->db->bind(':id', $id);
         return $this->db->single();
     }
     
-    // --- Metode BARU: Memperbarui data pengguna ---
+    // ✅ PERBAIKAN: Mengembalikan kolom 'email'
     public function updateUser($data) {
         if (empty($data['password'])) {
             $query = 'UPDATE ' . $this->table . ' SET username = :username, id_pengguna = :id_pengguna, email = :email, role = :role WHERE id = :id';
@@ -86,27 +72,18 @@ class User_model {
         return $this->db->rowCount();
     }
 
-    // --- Metode BARU untuk Pagination ---
-    /**
-     * Mengambil user untuk halaman tertentu.
-     * @param int $offset Offset (mulai dari baris ke berapa).
-     * @param int $limit Jumlah baris per halaman.
-     * @return array Array data user.
-     */
+    // ✅ PERBAIKAN: Mengembalikan kolom 'email'
     public function getUsersPaginated($offset, $limit) {
-        $this->db->query('SELECT * FROM ' . $this->table . ' LIMIT :limit OFFSET :offset');
+        $this->db->query('SELECT id, id_pengguna, username, email, role FROM ' . $this->table . ' LIMIT :limit OFFSET :offset');
         $this->db->bind(':limit', $limit, PDO::PARAM_INT);
         $this->db->bind(':offset', $offset, PDO::PARAM_INT);
         return $this->db->resultSet();
     }
     
-    /**
-     * Menghitung total jumlah user.
-     * @return int Total jumlah user.
-     */
     public function countAllUsers() {
         $this->db->query('SELECT COUNT(*) AS total FROM ' . $this->table);
-        return $this->db->single()['total'];
+        $result = $this->db->single();
+        return $result ? (int)$result['total'] : 0;
     }
-    // --- Akhir Metode BARU ---
 }
+

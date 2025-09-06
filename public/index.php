@@ -12,6 +12,15 @@ require_once '../app/controllers/AuthController.php';
 require_once '../app/controllers/AdminController.php';
 require_once '../app/controllers/GuruController.php';
 require_once '../app/controllers/SiswaController.php';
+require_once '../app/models/User_model.php';
+require_once '../app/models/Barang_model.php';
+require_once '../app/models/Guru_model.php';
+require_once '../app/models/Kelas_model.php';
+require_once '../app/models/Siswa_model.php';
+require_once '../app/models/Peminjaman_model.php';
+// ✅ Tambahkan require untuk model Profile
+require_once '../app/models/Profile_model.php';
+
 
 // Inisialisasi controller yang akan digunakan
 $authController = new AuthController();
@@ -19,7 +28,6 @@ $adminController = new AdminController();
 $guruController = new GuruController();
 $siswaController = new SiswaController();
 
-// --- Logika routing yang DIPERBAIKI ---
 // Ambil URL dari parameter 'url' yang dikirim oleh .htaccess
 $url = isset($_GET['url']) ? $_GET['url'] : '';
 
@@ -27,9 +35,11 @@ $url = isset($_GET['url']) ? $_GET['url'] : '';
 $url_parts = explode('/', filter_var(rtrim($url, '/'), FILTER_SANITIZE_URL));
 
 // Tentukan controller, method, dan parameter
-$controller = isset($url_parts[0]) ? strtolower($url_parts[0]) : '';
-$method = isset($url_parts[1]) ? strtolower($url_parts[1]) : '';
-$param = isset($url_parts[2]) ? $url_parts[2] : '';
+$controller = $url_parts[0] ?? '';
+$method = $url_parts[1] ?? '';
+$param1 = $url_parts[2] ?? '';
+$param2 = $url_parts[3] ?? '';
+
 
 // Rute Otentikasi
 if (empty($controller)) {
@@ -46,30 +56,64 @@ elseif ($controller === 'admin') {
     if ($method === 'dashboard' || empty($method)) {
         $adminController->index();
     } 
-    // PERBAIKAN DI SINI: Meneruskan parameter ($param)
-    elseif ($method === 'pengguna') {
-        $adminController->manajemenPengguna($param);
+    // ... (Rute-rute lain untuk admin tetap sama)
+    elseif ($method === 'pengguna') { $adminController->manajemenPengguna($param1); } 
+    elseif ($method === 'tambah-pengguna') { $adminController->tambahPengguna(); }
+    elseif ($method === 'ubah-pengguna') { $adminController->ubahPengguna(); }
+    elseif ($method === 'hapus-pengguna' && !empty($param1)) { $adminController->hapusPengguna($param1); }
+    elseif ($method === 'get-pengguna-by-id' && !empty($param1)) { $adminController->getPenggunaById($param1); } 
+    elseif ($method === 'barang') {
+        if (isset($url_parts[2]) && $url_parts[2] === 'detail' && isset($url_parts[3])) {
+            $adminController->detailBarang($url_parts[3]);
+        } else {
+            $halaman = $url_parts[2] ?? 1;
+            $adminController->manajemenBarang($halaman);
+        }
+    }
+    elseif ($method === 'tambah-barang') { $adminController->tambahBarang(); }
+    elseif ($method === 'ubah-barang') { $adminController->ubahBarang(); }
+    elseif ($method === 'hapus-barang' && !empty($param1)) { $adminController->hapusBarang($param1); }
+    elseif ($method === 'get-barang-by-id' && !empty($param1)) { $adminController->getBarangById($param1); } 
+    elseif ($method === 'kelas') {
+        $tab = $param1 ?: 'kelas';
+        $halaman = $param2 ?: 1;
+        $adminController->manajemenKelas($tab, $halaman);
+    }
+    elseif ($method === 'tambahKelas') { $adminController->tambahKelas(); }
+    elseif ($method === 'getKelasById' && !empty($param1)) { $adminController->getKelasById($param1); }
+    elseif ($method === 'ubahKelas') { $adminController->ubahKelas(); }
+    elseif ($method === 'hapusKelas' && !empty($param1)) { $adminController->hapusKelas($param1); }
+    elseif ($method === 'tambahGuru') { $adminController->tambahGuru(); }
+    elseif ($method === 'getGuruById' && !empty($param1)) { $adminController->getGuruById($param1); }
+    elseif ($method === 'detailGuru' && !empty($param1)) { $adminController->detailGuru($param1); }
+    elseif ($method === 'ubahGuru') { $adminController->ubahGuru(); }
+    elseif ($method === 'hapusGuru' && !empty($param1)) { $adminController->hapusGuru($param1); }
+    elseif ($method === 'detailKelas' && !empty($param1)) { 
+        $halaman = $param2 ?? 1;
+        $adminController->detailKelas($param1, $halaman); 
+    }
+    elseif ($method === 'tambahSiswa') { $adminController->tambahSiswa(); }
+    elseif ($method === 'getSiswaById' && !empty($param1)) { $adminController->getSiswaById($param1); }
+    elseif ($method === 'ubahSiswa') { $adminController->ubahSiswa(); }
+    elseif ($method === 'hapusSiswa' && !empty($param1) && !empty($param2)) { $adminController->hapusSiswa($param1, $param2); }
+    elseif ($method === 'detailSiswa' && !empty($param1)) { $adminController->detailSiswa($param1); }
+    elseif ($method === 'laporan') {
+        $halaman = $param1 ?? 1;
+        $adminController->laporanRiwayat($halaman);
     } 
-    elseif ($method === 'tambah-pengguna') {
-        $adminController->tambahPengguna();
-    } elseif ($method === 'ubah-pengguna') { // Rute ubah pengguna tanpa parameter
-        $adminController->ubahPengguna();
-    } elseif ($method === 'hapus-pengguna' && $param !== '') {
-        $adminController->hapusPengguna($param);
-    } elseif ($method === 'get-pengguna-by-id' && $param !== '') {
-        $adminController->getPenggunaById($param);
-    } elseif ($method === 'barang') {
-        $adminController->manajemenBarang();
-    } elseif ($method === 'kelas') {
-        $adminController->manajemenKelas();
-    } elseif ($method === 'laporan') {
-        $adminController->laporanRiwayat();
-    } elseif ($method === 'profile') {
+    elseif ($method === 'unduhLaporan') { $adminController->unduhLaporan(); }
+
+    // ✅ RUTE BARU: Untuk Profil Admin
+    elseif ($method === 'profile') {
         $adminController->profile();
-    } else {
+    } 
+    elseif ($method === 'changePassword') {
+        $adminController->changePassword();
+    } 
+    
+    else {
         http_response_code(404);
-        echo "<h1>404 Not Found</h1>";
-        echo "Halaman yang Anda cari tidak ditemukan.";
+        echo "<h1>404 Not Found</h1> Halaman yang Anda cari tidak ditemukan di dalam Admin.";
     }
 }
 // Rute Guru
@@ -82,12 +126,19 @@ elseif ($controller === 'guru') {
         $guruController->daftarSiswaWali();
     } elseif ($method === 'riwayat') {
         $guruController->riwayatPeminjaman();
-    } elseif ($method === 'profile') {
+    } 
+    
+    // ✅ RUTE BARU: Untuk Profil Guru
+    elseif ($method === 'profile') {
         $guruController->profile();
-    } else {
+    }
+    elseif ($method === 'changePassword') {
+        $guruController->changePassword();
+    }
+
+    else {
         http_response_code(404);
-        echo "<h1>404 Not Found</h1>";
-        echo "Halaman yang Anda cari tidak ditemukan.";
+        echo "<h1>404 Not Found</h1> Halaman yang Anda cari tidak ditemukan di dalam Guru.";
     }
 }
 // Rute Siswa
@@ -100,14 +151,22 @@ elseif ($controller === 'siswa') {
         $siswaController->pengembalianBarang();
     } elseif ($method === 'riwayat') {
         $siswaController->riwayatPeminjaman();
-    } else {
+    } 
+    
+    // ✅ RUTE BARU: Untuk Profil Siswa
+    elseif ($method === 'profile') {
+        $siswaController->profile();
+    }
+    elseif ($method === 'changePassword') {
+        $siswaController->changePassword();
+    }
+    
+    else {
         http_response_code(404);
-        echo "<h1>404 Not Found</h1>";
-        echo "Halaman yang Anda cari tidak ditemukan.";
+        echo "<h1>404 Not Found</h1> Halaman yang Anda cari tidak ditemukan di dalam Siswa.";
     }
 } else {
     http_response_code(404);
-    echo "<h1>404 Not Found</h1>";
-    echo "Halaman yang Anda cari tidak ditemukan.";
+    echo "<h1>404 Not Found</h1> Halaman yang Anda cari tidak ditemukan.";
 }
-// --- Akhir logika routing yang DIPERBAIKI ---
+

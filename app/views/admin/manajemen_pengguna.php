@@ -15,6 +15,7 @@
                     <th>No</th>
                     <th>ID Pengguna</th>
                     <th>Nama Pengguna</th>
+                    <!-- ✅ KOLOM EMAIL DIKEMBALIKAN -->
                     <th>Email</th>
                     <th>Peran</th>
                     <th>Aksi</th>
@@ -24,7 +25,7 @@
                 <?php if (isset($data['users']) && is_array($data['users']) && !empty($data['users'])): ?>
                     <?php 
                     $no = 1;
-                    if ($data['halaman_aktif'] > 1) {
+                    if (isset($data['halaman_aktif']) && $data['halaman_aktif'] > 1) {
                         $no = ($data['halaman_aktif'] - 1) * 10 + 1;
                     }
                     ?>
@@ -33,6 +34,7 @@
                         <td><?= $no++; ?></td>
                         <td><?= htmlspecialchars($user['id_pengguna']); ?></td>
                         <td><?= htmlspecialchars($user['username']); ?></td>
+                        <!-- ✅ DATA EMAIL DIKEMBALIKAN -->
                         <td><?= htmlspecialchars($user['email']); ?></td>
                         <td><?= ucfirst(htmlspecialchars($user['role'])); ?></td>
                         <td class="action-buttons">
@@ -47,12 +49,13 @@
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="6" class="text-center">Tidak ada data pengguna.</td>
+                        <td colspan="6" class="text-center">Tidak ada data pengguna.</td> <!-- Colspan diubah kembali menjadi 6 -->
                     </tr>
                 <?php endif; ?>
             </tbody>
         </table>
         
+        <?php if (isset($data['total_halaman'])): ?>
         <div class="pagination-container">
             <a href="<?= BASEURL; ?>/admin/pengguna/<?= max(1, $data['halaman_aktif'] - 1); ?>" class="pagination-btn <?= $data['halaman_aktif'] <= 1 ? 'disabled' : ''; ?>">Sebelumnya</a>
             <div class="page-numbers">
@@ -62,28 +65,31 @@
             </div>
             <a href="<?= BASEURL; ?>/admin/pengguna/<?= min($data['total_halaman'], $data['halaman_aktif'] + 1); ?>" class="pagination-btn <?= $data['halaman_aktif'] >= $data['total_halaman'] ? 'disabled' : ''; ?>">Berikutnya</a>
         </div>
+        <?php endif; ?>
     </div>
     
+    <!-- Modal untuk Tambah dan Edit Pengguna -->
     <div id="userModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
             <h3 class="modal-title">Pengguna</h3>
-            <form id="userForm" action="<?= BASEURL; ?>/admin/tambah-pengguna" method="POST">
+            <form id="userForm" action="<?= BASEURL; ?>/admin/tambahPengguna" method="POST">
                 <input type="hidden" id="userId" name="id">
                 <div class="form-row">
                     <div class="form-group">
                         <input type="text" id="username" name="username" placeholder="Nama Pengguna" required>
                     </div>
+                    <!-- ✅ FORM EMAIL DIKEMBALIKAN -->
                     <div class="form-group">
                         <input type="email" id="email" name="email" placeholder="Email" required>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <input type="text" id="id_pengguna" name="id_pengguna" placeholder="ID Pengguna" required>
+                        <input type="text" id="id_pengguna" name="id_pengguna" placeholder="ID Pengguna (NIS/NIP)" required>
                     </div>
                     <div class="form-group">
-                        <input type="password" id="password" placeholder="Kata Sandi" required>
+                         <input type="password" id="password" name="password" placeholder="Kata Sandi">
                     </div>
                 </div>
                 <div class="form-row">
@@ -101,6 +107,7 @@
         </div>
     </div>
 
+    <!-- Modal untuk Konfirmasi Hapus Pengguna -->
     <div id="deleteModal" class="modal">
         <div class="modal-content delete-modal">
             <span class="close-button">&times;</span>

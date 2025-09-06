@@ -36,18 +36,42 @@ class GuruController {
 
     public function profile() {
         $this->checkAuth();
-        $data = [
-            'title' => 'Profil Saya',
-            'username' => $_SESSION['username'],
-            'email' => $_SESSION['email'] ?? 'guru@example.com', // Placeholder
-            'role' => $_SESSION['role']
-        ];
+        $userModel = new User_model();
+        $profileModel = new Profile_model();
+
+        $data['user'] = $userModel->getUserById($_SESSION['user_id']);
+        $data['profile'] = $profileModel->getProfileByRoleAndUserId($_SESSION['role'], $_SESSION['user_id']);
+        $data['title'] = 'Profil Saya';
         
-        // Memuat view dengan layout sederhana (bukan layout guru)
+        // ✅ PERBAIKAN: Path sekarang mengarah ke admin/profile.php
         extract($data);
-        require_once '../app/views/layouts/header.php';
-        require_once '../app/views/guru/profile.php'; // file view profil guru
-        require_once '../app/views/layouts/footer.php';
+        require_once '../app/views/layouts/admin_header.php';
+        require_once '../app/views/admin/profile.php'; 
+        require_once '../app/views/layouts/admin_footer.php';
+    }
+    public function changePassword() {
+        $this->checkAuth();
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $userModel = new User_model();
+            $user = $userModel->getUserById($_SESSION['user_id']);
+
+            if (password_verify($_POST['old_password'], $user['password'])) {
+                if ($_POST['new_password'] === $_POST['confirm_password']) {
+                    if (strlen($_POST['new_password']) >= 6) {
+                        $userModel->changePassword($_SESSION['user_id'], $_POST['new_password']);
+                        Flasher::setFlash('Berhasil!', 'Kata sandi telah diubah.', 'success');
+                    } else {
+                        Flasher::setFlash('Gagal!', 'Password baru minimal harus 6 karakter.', 'danger');
+                    }
+                } else {
+                    Flasher::setFlash('Gagal!', 'Konfirmasi password baru tidak cocok.', 'danger');
+                }
+            } else {
+                Flasher::setFlash('Gagal!', 'Kata sandi lama salah.', 'danger');
+            }
+        }
+        header('Location: ' . BASEURL . '/guru/profile');
+        exit;
     }
 
     // Helper untuk memuat view DENGAN layout guru
