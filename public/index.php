@@ -99,13 +99,13 @@ elseif ($controller === 'admin') {
     elseif ($method === 'get-kelas-by-id' && !empty($param1)) { $adminController->getKelasById($param1); }
     elseif ($method === 'ubah-kelas') { $adminController->ubahKelas(); }
     elseif ($method === 'hapus-kelas' && !empty($param1)) { $adminController->hapusKelas($param1); }
-    elseif ($method === 'detail-kelas' && !empty($param1)) { 
+    elseif ($method === 'detailKelas' && !empty($param1)) { 
         $halaman = $param2 ?? 1;
         $adminController->detailKelas($param1, $halaman); 
     }
     elseif ($method === 'tambah-guru') { $adminController->tambahGuru(); }
     elseif ($method === 'get-guru-by-id' && !empty($param1)) { $adminController->getGuruById($param1); }
-    elseif ($method === 'detail-guru' && !empty($param1)) { $adminController->detailGuru($param1); }
+    elseif ($method === 'detailGuru' && !empty($param1)) { $adminController->detailGuru($param1); }
     elseif ($method === 'ubah-guru') { $adminController->ubahGuru(); }
     elseif ($method === 'hapus-guru' && !empty($param1)) { $adminController->hapusGuru($param1); }
     
@@ -114,7 +114,8 @@ elseif ($controller === 'admin') {
     elseif ($method === 'get-siswa-by-id' && !empty($param1)) { $adminController->getSiswaById($param1); }
     elseif ($method === 'ubah-siswa') { $adminController->ubahSiswa(); }
     elseif ($method === 'hapus-siswa' && !empty($param1) && !empty($param2)) { $adminController->hapusSiswa($param1, $param2); }
-    elseif ($method === 'detail-siswa' && !empty($param1)) { $adminController->detailSiswa($param1); }
+    // ✅ PERBAIKAN: Mengubah rute dari 'detail-siswa' menjadi 'detailSiswa'
+    elseif ($method === 'detailSiswa' && !empty($param1)) { $adminController->detailSiswa($param1); }
     
     // --- Manajemen Laporan ---
     elseif ($method === 'laporan') {

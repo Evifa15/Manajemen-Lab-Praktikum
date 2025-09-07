@@ -36,7 +36,7 @@
             <h4>Daftar Siswa di Kelas Ini</h4>
             <div class="table-controls-container" style="margin-top: 1.5rem;">
                 <form action="<?= BASEURL ?>/admin/detailKelas/<?= $data['kelas']['id'] ?>" method="get" class="search-form">
-                    <input type="text" name="search" placeholder="Cari nama atau ID siswa..." value="<?= htmlspecialchars($data['search_term'] ?? '') ?>">
+                    <input type="text" name="search" placeholder="Cari nama, ID, jenis kelamin, atau status siswa..." value="<?= htmlspecialchars($data['search_term'] ?? '') ?>">
                     <button type="submit" class="add-button">Cari</button>
                 </form>
                 <button class="add-button" id="addSiswaBtn">+ Tambah Siswa</button>
@@ -63,7 +63,6 @@
                         <td><?= htmlspecialchars($siswa['jenis_kelamin']); ?></td>
                         <td><?= htmlspecialchars($siswa['status']); ?></td>
                         <td class="action-buttons">
-                            <!-- ✅ PERBAIKAN: Menambahkan ikon ke semua tombol aksi -->
                             <a href="<?= BASEURL ?>/admin/detailSiswa/<?= $siswa['id'] ?>" class="view-btn" title="Lihat Detail">
                                 <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/></svg>
                             </a>
@@ -101,10 +100,74 @@
     </div>
 </div>
 
-<!-- Modal untuk Siswa (Konten di-generate oleh JS) -->
-<div id="siswaModal" class="modal"></div>
+<div id="siswaModal" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+        <span class="close-button">&times;</span>
+        <h3 class="modal-title" id="siswaModalTitle">Tambah Siswa</h3>
+        <form id="siswaForm" method="POST" action="<?= BASEURL; ?>/admin/tambah-siswa" enctype="multipart/form-data">
+            <input type="hidden" id="siswaId" name="id">
+            <input type="hidden" id="kelas_id" name="kelas_id" value="<?= htmlspecialchars($data['kelas']['id'] ?? ''); ?>">
 
-<!-- Modal Hapus Universal (Struktur tetap sama) -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="nama">Nama Siswa</label>
+                    <input type="text" id="nama" name="nama" required>
+                </div>
+                <div class="form-group">
+                    <label for="id_siswa">ID Siswa (NIS/NISN)</label>
+                    <input type="text" id="id_siswa" name="id_siswa" required>
+                </div>
+            </div>
+            <div class="form-row">
+            <div class="form-group">
+                <label for="jenis_kelamin">Jenis Kelamin</label>
+                <select id="jenis_kelamin" name="jenis_kelamin" required>
+                    <option value="Laki laki">Laki laki</option>
+                    <option value="Perempuan">Perempuan</option>
+                </select>
+            </div>
+            </div>
+            <div class="form-group">
+                <label for="status">Status</label>
+                <select id="status" name="status" required>
+                    <option value="Murid">Murid</option>
+                    <option value="Ketua Murid">Ketua Murid</option>
+                </select>
+            </div>
+             <div class="form-row">
+                <div class="form-group">
+                    <label for="ttl">Tempat, Tanggal Lahir</label>
+                    <input type="text" id="ttl" name="ttl">
+                </div>
+                <div class="form-group">
+                    <label for="agama">Agama</label>
+                    <input type="text" id="agama" name="agama">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="alamat">Alamat</label>
+                <textarea id="alamat" name="alamat" rows="2"></textarea>
+            </div>
+             <div class="form-row">
+                <div class="form-group">
+                    <label for="no_hp">No. HP</label>
+                    <input type="text" id="no_hp" name="no_hp">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email">
+                </div>
+            </div>
+             <div class="form-group">
+                <label for="foto">Foto (Opsional)</label>
+                <input type="file" id="foto" name="foto" accept="image/*">
+            </div>
+            
+            <button type="submit">Simpan</button>
+        </form>
+    </div>
+</div>
+
 <div id="deleteModal" class="modal">
     <div class="modal-content delete-modal" style="max-width: 400px; text-align: center;">
         <span class="close-button">&times;</span>

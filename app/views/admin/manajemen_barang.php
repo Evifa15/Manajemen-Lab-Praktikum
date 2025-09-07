@@ -87,11 +87,70 @@
     </div>
     
     <div id="itemModal" class="modal">
-        ...
+        <div class="modal-content" style="max-width: 700px;">
+            <span class="close-button">&times;</span>
+            <h3 class="modal-title">Tambah Barang</h3>
+            <form id="itemForm" action="<?= BASEURL; ?>/admin/tambah-barang" method="POST" enctype="multipart/form-data">
+                <input type="hidden" id="itemId" name="id">
+                <input type="hidden" id="gambarLama" name="gambar_lama">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nama_barang">Nama Barang</label>
+                        <input type="text" id="nama_barang" name="nama_barang" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="kode_barang">Kode Barang</label>
+                        <input type="text" id="kode_barang" name="kode_barang" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="jumlah">Jumlah Stok</label>
+                        <input type="number" id="jumlah" name="jumlah" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="kondisi">Kondisi</label>
+                        <select id="kondisi" name="kondisi" required>
+                            <option value="">-- Pilih Kondisi --</option>
+                            <option value="baik">Baik</option>
+                            <option value="rusak ringan">Rusak Ringan</option>
+                            <option value="rusak berat">Rusak Berat</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                     <div class="form-group">
+                        <label for="lokasi_penyimpanan">Lokasi Penyimpanan</label>
+                        <input type="text" id="lokasi_penyimpanan" name="lokasi_penyimpanan">
+                    </div>
+                    <div class="form-group">
+                        <label for="tanggal_pembelian">Tanggal Pembelian</label>
+                        <input type="date" id="tanggal_pembelian" name="tanggal_pembelian">
+                    </div>
+                </div>
+                 <div class="form-group">
+                    <label for="gambar">Gambar (Opsional)</label>
+                    <input type="file" id="gambar" name="gambar" accept="image/*">
+                </div>
+                <button type="submit">Simpan</button>
+            </form>
+        </div>
     </div>
 
     <div id="deleteModal" class="modal">
-        ...
+        <div class="modal-content delete-modal">
+            <span class="close-button">&times;</span>
+            <div class="delete-icon-wrapper">
+                <svg xmlns="http://www.w3.org/2000/svg" height="48px" viewBox="0 0 24 24" width="48px" fill="#ef4444"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            </div>
+            <p class="modal-message">Apakah Anda yakin ingin menghapus data ini?</p>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="cancelDelete">Batal</button>
+                <a href="#" class="btn btn-danger" id="confirmDeleteLink">Ya, Hapus</a>
+            </div>
+
+        </div>
     </div>
 </div>
 

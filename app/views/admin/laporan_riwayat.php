@@ -46,7 +46,7 @@
             </form>
         </div>
 
-        <table>
+        <table id="laporan-table">
             <thead>
                 <tr>
                     <th>No</th>

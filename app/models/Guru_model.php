@@ -14,9 +14,10 @@ class Guru_model {
     }
 
     public function getGuruPaginated($offset, $limit, $keyword = null) {
+        // ✅ PERBAIKAN: Tambahkan 'jenis_kelamin' dan 'no_hp' ke kondisi pencarian
         $sql = 'SELECT id, nip, nama, jenis_kelamin, no_hp FROM ' . $this->table;
         if (!empty($keyword)) {
-            $sql .= ' WHERE nama LIKE :keyword OR nip LIKE :keyword';
+            $sql .= ' WHERE nama LIKE :keyword OR nip LIKE :keyword OR jenis_kelamin LIKE :keyword OR no_hp LIKE :keyword';
         }
         $sql .= ' ORDER BY nama ASC LIMIT :limit OFFSET :offset';
         
@@ -30,9 +31,10 @@ class Guru_model {
     }
 
     public function countAllGuru($keyword = null) {
+        // ✅ PERBAIKAN: Tambahkan 'jenis_kelamin' dan 'no_hp' ke kondisi pencarian
         $sql = 'SELECT COUNT(*) as total FROM ' . $this->table;
         if (!empty($keyword)) {
-            $sql .= ' WHERE nama LIKE :keyword OR nip LIKE :keyword';
+            $sql .= ' WHERE nama LIKE :keyword OR nip LIKE :keyword OR jenis_kelamin LIKE :keyword OR no_hp LIKE :keyword';
         }
 
         $this->db->query($sql);

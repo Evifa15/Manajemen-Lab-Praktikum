@@ -105,9 +105,9 @@ class AdminController {
     }
 
     public function getPenggunaDetailById($id) {
-        $this->checkAuth(); // BENAR: Menggunakan panah
+        $this->checkAuth();
         $userModel = new User_model();
-        $user = $userModel->getUserDetailById($id); // BENAR: Menggunakan panah
+        $user = $userModel->getUserDetailById($id);
         
         header('Content-Type: application/json');
         echo json_encode($user);
@@ -163,6 +163,14 @@ class AdminController {
     public function tambahBarang() {
         $this->checkAuth();
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            // --- TAMBAHAN KODE: Validasi sisi server untuk kondisi ---
+            if (empty($_POST['kondisi'])) {
+                Flasher::setFlash('Gagal!', 'Kondisi barang harus diisi.', 'danger');
+                header('Location: ' . BASEURL . '/admin/barang');
+                exit;
+            }
+            // --- AKHIR TAMBAHAN KODE ---
+
             $barangModel = new Barang_model();
 
             $namaGambar = null;
@@ -215,6 +223,14 @@ class AdminController {
     public function ubahBarang() {
         $this->checkAuth();
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            // --- TAMBAHAN KODE: Validasi sisi server untuk kondisi ---
+            if (empty($_POST['kondisi'])) {
+                Flasher::setFlash('Gagal!', 'Kondisi barang harus diisi.', 'danger');
+                header('Location: ' . BASEURL . '/admin/barang');
+                exit;
+            }
+            // --- AKHIR TAMBAHAN KODE ---
+            
             $barangModel = new Barang_model();
 
             $namaGambar = $_POST['gambar_lama'];
@@ -284,7 +300,7 @@ class AdminController {
 
         $keyword = $_GET['search'] ?? null;
         $halaman = max(1, (int)$halaman);
-        $limit = 10;
+        $limit = 5;
         
         $offsetKelas = ($tab === 'kelas') ? ($halaman - 1) * $limit : 0;
         $offsetGuru = ($tab === 'guru') ? ($halaman - 1) * $limit : 0;

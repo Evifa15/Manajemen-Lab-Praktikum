@@ -9,9 +9,10 @@ class Siswa_model {
     }
 
     public function getSiswaByKelasIdPaginated($kelas_id, $offset, $limit, $keyword = null) {
+        // ✅ PERBAIKAN: Tambahkan 'jenis_kelamin' dan 'status' ke kondisi pencarian
         $sql = 'SELECT id, id_siswa, nama, jenis_kelamin, status FROM ' . $this->table . ' WHERE kelas_id = :kelas_id';
         if (!empty($keyword)) {
-            $sql .= ' AND (nama LIKE :keyword OR id_siswa LIKE :keyword)';
+            $sql .= ' AND (nama LIKE :keyword OR id_siswa LIKE :keyword OR jenis_kelamin LIKE :keyword OR status LIKE :keyword)';
         }
         $sql .= ' ORDER BY nama ASC LIMIT :limit OFFSET :offset';
         
@@ -26,9 +27,10 @@ class Siswa_model {
     }
 
     public function countAllSiswaByKelasId($kelas_id, $keyword = null) {
+        // ✅ PERBAIKAN: Tambahkan 'jenis_kelamin' dan 'status' ke kondisi pencarian
         $sql = 'SELECT COUNT(*) as total FROM ' . $this->table . ' WHERE kelas_id = :kelas_id';
         if (!empty($keyword)) {
-            $sql .= ' AND (nama LIKE :keyword OR id_siswa LIKE :keyword)';
+            $sql .= ' AND (nama LIKE :keyword OR id_siswa LIKE :keyword OR jenis_kelamin LIKE :keyword OR status LIKE :keyword)';
         }
         $this->db->query($sql);
         $this->db->bind(':kelas_id', $kelas_id);

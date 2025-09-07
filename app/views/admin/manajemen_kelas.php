@@ -2,24 +2,65 @@
 
 <style>
     /* Style untuk tab */
-    .tab-container { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
-    .tab-link { padding: 10px 20px; cursor: pointer; border: none; background: none; font-size: 16px; font-weight: 500; color: #888; border-bottom: 3px solid transparent; }
-    .tab-link.active { color: #4CAF50; border-bottom: 3px solid #4CAF50; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .search-form { display: flex; gap: 10px; flex-grow: 1; }
-    .search-form input { width: 100%; }
+    .tab-links-wrapper {
+        display: flex;
+        border-bottom: 2px solid #ddd;
+    }
+
+    .tab-link {
+        padding: 10px 20px;
+        cursor: pointer;
+        border: none;
+        background: none;
+        font-size: 16px;
+        font-weight: 500;
+        color: #888;
+        border-bottom: 3px solid transparent;
+        text-decoration: none;
+    }
+
+    .tab-link.active {
+        color: #4CAF50;
+        border-bottom: 3px solid #4CAF50;
+    }
+
+    .tab-content {
+        display: none;
+        padding-top: 20px;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    /* Style untuk tata letak kontrol di setiap tab */
+    .table-controls-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        gap: 10px;
+    }
+
+    .search-form {
+        display: flex;
+        gap: 10px;
+        flex-grow: 1;
+    }
+
+    .search-form input {
+        width: 100%;
+    }
 </style>
 
 <div class="content">
     <div class="main-table-container">
 
-        <div class="tab-container">
-            <button class="tab-link <?= ($data['active_tab'] == 'kelas') ? 'active' : '' ?>" data-tab="kelas">Daftar Kelas</button>
-            <button class="tab-link <?= ($data['active_tab'] == 'guru') ? 'active' : '' ?>" data-tab="guru">Daftar Guru</button>
+        <div class="tab-links-wrapper">
+            <a href="<?= BASEURL; ?>/admin/kelas/kelas" class="tab-link <?= ($data['active_tab'] == 'kelas') ? 'active' : '' ?>">Daftar Kelas</a>
+            <a href="<?= BASEURL; ?>/admin/kelas/guru" class="tab-link <?= ($data['active_tab'] == 'guru') ? 'active' : '' ?>">Daftar Guru</a>
         </div>
-
-        <!-- Konten Tab Daftar Kelas -->
+        
         <div id="kelas" class="tab-content <?= ($data['active_tab'] == 'kelas') ? 'active' : '' ?>">
             <div class="table-controls-container">
                 <form action="<?= BASEURL ?>/admin/kelas/kelas" method="get" class="search-form">
@@ -40,7 +81,7 @@
                 </thead>
                 <tbody>
                     <?php if (!empty($data['kelas'])): 
-                        $no = ($data['halaman_aktif_kelas'] - 1) * 10 + 1;
+                        $no = ($data['halaman_aktif_kelas'] - 1) * 5 + 1;
                         foreach ($data['kelas'] as $kelas): ?>
                         <tr>
                             <td><?= $no++; ?></td>
@@ -66,24 +107,31 @@
                 </tbody>
             </table>
             <?php 
-                $searchQuery = isset($data['search_term']) ? '?search=' . urlencode($data['search_term']) : '';
+                $searchQuery = isset($data['search_term']) ? '&search=' . urlencode($data['search_term']) : '';
+                $waliQuery = isset($data['filters']['wali_id']) ? '&filter_wali=' . urlencode($data['filters']['wali_id']) : '';
+                $combinedQuery = $searchQuery . $waliQuery;
+                $maxPages = 5; // Tentukan jumlah maksimum halaman yang akan ditampilkan
+                $startPage = max(1, $data['halaman_aktif_kelas'] - floor($maxPages / 2));
+                $endPage = min($data['total_halaman_kelas'], $startPage + $maxPages - 1);
+                if ($endPage - $startPage + 1 < $maxPages) {
+                    $startPage = max(1, $endPage - $maxPages + 1);
+                }
             ?>
             <div class="pagination-container">
-                 <a href="<?= BASEURL ?>/admin/kelas/kelas/<?= max(1, $data['halaman_aktif_kelas'] - 1) . $searchQuery ?>" class="pagination-btn <?= ($data['halaman_aktif_kelas'] <= 1) ? 'disabled' : '' ?>">Sebelumnya</a>
+                 <a href="<?= BASEURL ?>/admin/kelas/kelas/<?= max(1, $data['halaman_aktif_kelas'] - 1) ?>?<?= $combinedQuery ?>" class="pagination-btn <?= ($data['halaman_aktif_kelas'] <= 1) ? 'disabled' : '' ?>">Sebelumnya</a>
                 <div class="page-numbers">
-                    <?php for ($i = 1; $i <= $data['total_halaman_kelas']; $i++): ?>
-                        <a href="<?= BASEURL ?>/admin/kelas/kelas/<?= $i . $searchQuery ?>" class="page-link <?= ($i == $data['halaman_aktif_kelas']) ? 'active' : '' ?>"><?= $i ?></a>
+                    <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                        <a href="<?= BASEURL ?>/admin/kelas/kelas/<?= $i ?>?<?= $combinedQuery ?>" class="page-link <?= ($i == $data['halaman_aktif_kelas']) ? 'active' : '' ?>"><?= $i ?></a>
                     <?php endfor; ?>
                 </div>
-                <a href="<?= BASEURL ?>/admin/kelas/kelas/<?= min($data['total_halaman_kelas'], $data['halaman_aktif_kelas'] + 1) . $searchQuery ?>" class="pagination-btn <?= ($data['halaman_aktif_kelas'] >= $data['total_halaman_kelas']) ? 'disabled' : '' ?>">Berikutnya</a>
+                <a href="<?= BASEURL ?>/admin/kelas/kelas/<?= min($data['total_halaman_kelas'], $data['halaman_aktif_kelas'] + 1) ?>?<?= $combinedQuery ?>" class="pagination-btn <?= ($data['halaman_aktif_kelas'] >= $data['total_halaman_kelas']) ? 'disabled' : '' ?>">Berikutnya</a>
             </div>
         </div>
 
-        <!-- Konten Tab Daftar Guru -->
         <div id="guru" class="tab-content <?= ($data['active_tab'] == 'guru') ? 'active' : '' ?>">
-             <div class="table-controls-container">
-                 <form action="<?= BASEURL ?>/admin/kelas/guru" method="get" class="search-form">
-                    <input type="text" name="search" placeholder="Cari nama atau NIP guru..." value="<?= htmlspecialchars($data['search_term'] ?? '') ?>">
+            <div class="table-controls-container">
+                <form action="<?= BASEURL ?>/admin/kelas/guru" method="get" class="search-form">
+                    <input type="text" name="search" placeholder="Cari nama, NIP, jenis kelamin, atau No. HP guru..." value="<?= htmlspecialchars($data['search_term'] ?? '') ?>">
                     <button type="submit" class="add-button">Cari</button>
                 </form>
                 <button class="add-button" id="addGuruBtn">+ Tambah Guru</button>
@@ -101,7 +149,7 @@
                 </thead>
                 <tbody>
                      <?php if (!empty($data['guru'])):
-                        $no = ($data['halaman_aktif_guru'] - 1) * 10 + 1;
+                        $no = ($data['halaman_aktif_guru'] - 1) * 5 + 1;
                         foreach ($data['guru'] as $guru): ?>
                         <tr>
                             <td><?= $no++; ?></td>
@@ -110,7 +158,6 @@
                             <td><?= htmlspecialchars($guru['jenis_kelamin']); ?></td>
                             <td><?= htmlspecialchars($guru['no_hp']); ?></td>
                             <td class="action-buttons">
-                                <!-- ✅ PERBAIKAN: Mengganti teks dengan ikon SVG -->
                                 <a href="<?= BASEURL ?>/admin/detailGuru/<?= $guru['id'] ?>" class="view-btn" title="Lihat Detail">
                                     <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/></svg>
                                 </a>
@@ -130,11 +177,17 @@
             </table>
              <?php 
                 $searchQuery = isset($data['search_term']) ? '?search=' . urlencode($data['search_term']) : '';
+                $maxPages = 5; // Tentukan jumlah maksimum halaman yang akan ditampilkan
+                $startPage = max(1, $data['halaman_aktif_guru'] - floor($maxPages / 2));
+                $endPage = min($data['total_halaman_guru'], $startPage + $maxPages - 1);
+                if ($endPage - $startPage + 1 < $maxPages) {
+                    $startPage = max(1, $endPage - $maxPages + 1);
+                }
             ?>
             <div class="pagination-container">
                 <a href="<?= BASEURL ?>/admin/kelas/guru/<?= max(1, $data['halaman_aktif_guru'] - 1) . $searchQuery ?>" class="pagination-btn <?= ($data['halaman_aktif_guru'] <= 1) ? 'disabled' : '' ?>">Sebelumnya</a>
                 <div class="page-numbers">
-                    <?php for ($i = 1; $i <= $data['total_halaman_guru']; $i++): ?>
+                    <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
                         <a href="<?= BASEURL ?>/admin/kelas/guru/<?= $i . $searchQuery ?>" class="page-link <?= ($i == $data['halaman_aktif_guru']) ? 'active' : '' ?>"><?= $i ?></a>
                     <?php endfor; ?>
                 </div>
@@ -145,7 +198,6 @@
     </div>
 </div>
 
-<!-- Semua Modal (Kelas, Guru, Hapus) tidak berubah -->
 <div id="kelasModal" class="modal">
     <div class="modal-content">
         <span class="close-button">&times;</span>
@@ -190,7 +242,7 @@
                  <div class="form-group">
                     <label for="jenis_kelamin">Jenis Kelamin</label>
                     <select id="jenis_kelamin" name="jenis_kelamin" required>
-                        <option value="Laki-laki">Laki-laki</option>
+                        <option value="Laki laki">Laki laki</option>
                         <option value="Perempuan">Perempuan</option>
                     </select>
                 </div>
