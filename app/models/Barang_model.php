@@ -8,20 +8,75 @@ class Barang_model {
         $this->db = new Database;
     }
 
-    // Metode untuk mengambil semua data barang
-    public function getAllBarang() {
-        $this->db->query('SELECT * FROM ' . $this->table);
+    // Metode untuk mengambil barang dengan pagination, search, dan filter
+    public function getBarangPaginated($offset, $limit, $filters = []) {
+        $query = "SELECT *,
+                    -- 2. Logika untuk menentukan status ketersediaan
+                    CASE 
+                        WHEN jumlah > 5 THEN 'Tersedia'
+                        WHEN jumlah > 0 AND jumlah <= 5 THEN 'Terbatas'
+                        ELSE 'Tidak Tersedia'
+                    END AS status
+                  FROM {$this->table} WHERE 1=1";
+
+        // Tambahkan filter pencarian (keyword)
+        if (!empty($filters['keyword'])) {
+            $query .= " AND (nama_barang LIKE :keyword OR kode_barang LIKE :keyword)";
+        }
+
+        // 4. Tambahkan filter kondisi
+        if (!empty($filters['kondisi'])) {
+            $query .= " AND kondisi = :kondisi";
+        }
+
+        $query .= " ORDER BY id ASC LIMIT :limit OFFSET :offset";
+        
+        $this->db->query($query);
+        
+        // Binding parameter
+        if (!empty($filters['keyword'])) {
+            $this->db->bind(':keyword', '%' . $filters['keyword'] . '%');
+        }
+        if (!empty($filters['kondisi'])) {
+            $this->db->bind(':kondisi', $filters['kondisi']);
+        }
+        $this->db->bind(':limit', $limit, PDO::PARAM_INT);
+        $this->db->bind(':offset', $offset, PDO::PARAM_INT);
+        
         return $this->db->resultSet();
     }
 
-    // Metode untuk mengambil data barang berdasarkan ID
+    // Metode untuk menghitung total barang dengan filter
+    public function countAllBarang($filters = []) {
+        $query = "SELECT COUNT(*) as total FROM {$this->table} WHERE 1=1";
+
+        if (!empty($filters['keyword'])) {
+            $query .= " AND (nama_barang LIKE :keyword OR kode_barang LIKE :keyword)";
+        }
+        if (!empty($filters['kondisi'])) {
+            $query .= " AND kondisi = :kondisi";
+        }
+
+        $this->db->query($query);
+
+        if (!empty($filters['keyword'])) {
+            $this->db->bind(':keyword', '%' . $filters['keyword'] . '%');
+        }
+        if (!empty($filters['kondisi'])) {
+            $this->db->bind(':kondisi', $filters['kondisi']);
+        }
+
+        $result = $this->db->single();
+        return $result ? (int)$result['total'] : 0;
+    }
+    
+    // --- Sisa fungsi lain (getBarangById, tambahBarang, dll) biarkan apa adanya ---
     public function getBarangById($id) {
         $this->db->query('SELECT * FROM ' . $this->table . ' WHERE id = :id');
         $this->db->bind(':id', $id);
         return $this->db->single();
     }
 
-    // Metode untuk menambah data barang baru
     public function tambahBarang($data) {
         $query = "INSERT INTO " . $this->table . " (nama_barang, kode_barang, jumlah, kondisi, gambar, tanggal_pembelian, lokasi_penyimpanan) 
                   VALUES (:nama_barang, :kode_barang, :jumlah, :kondisi, :gambar, :tanggal_pembelian, :lokasi_penyimpanan)";
@@ -81,19 +136,6 @@ class Barang_model {
         return $this->db->rowCount();
     }
     
-    // Metode untuk menghitung total barang
-    public function countAllBarang() {
-        $this->db->query('SELECT COUNT(*) as total FROM ' . $this->table);
-        $result = $this->db->single();
-        return $result ? (int)$result['total'] : 0;
-    }
 
-    // Metode untuk mengambil barang dengan pagination
-    public function getBarangPaginated($offset, $limit) {
-        // ✅ PERBAIKAN: Mengubah urutan LIMIT dan OFFSET
-        $this->db->query('SELECT * FROM ' . $this->table . ' LIMIT :limit OFFSET :offset');
-        $this->db->bind(':limit', (int)$limit, PDO::PARAM_INT);
-        $this->db->bind(':offset', (int)$offset, PDO::PARAM_INT);
-        return $this->db->resultSet();
-    }
+    
 }

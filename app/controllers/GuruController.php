@@ -43,12 +43,13 @@ class GuruController {
         $data['profile'] = $profileModel->getProfileByRoleAndUserId($_SESSION['role'], $_SESSION['user_id']);
         $data['title'] = 'Profil Saya';
         
-        // ✅ PERBAIKAN: Path sekarang mengarah ke admin/profile.php
+        // ✅ PERBAIKAN: Memuat header dan footer yang benar untuk guru
         extract($data);
-        require_once '../app/views/layouts/admin_header.php';
-        require_once '../app/views/admin/profile.php'; 
-        require_once '../app/views/layouts/admin_footer.php';
+        require_once '../app/views/layouts/guru_header.php';
+        require_once '../app/views/admin/profile.php'; // Tetap menggunakan view profile yang sama
+        require_once '../app/views/layouts/guru_footer.php';
     }
+
     public function changePassword() {
         $this->checkAuth();
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -74,7 +75,6 @@ class GuruController {
         exit;
     }
 
-    // Helper untuk memuat view DENGAN layout guru
     public function view($view, $data = []) {
         extract($data);
         require_once '../app/views/layouts/guru_header.php';

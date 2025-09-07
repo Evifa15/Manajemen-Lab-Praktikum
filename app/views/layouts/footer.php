@@ -1,5 +1,4 @@
-    <!-- Memuat file JavaScript utama (bukan admin-script.js) -->
-    <script src="<?= BASEURL; ?>/js/main.js"></script>
+    <!-- ✅ PERUBAHAN: Mengganti main.js menjadi auth-script.js -->
+    <script src="<?= BASEURL; ?>/js/auth.js"></script>
 </body>
 </html>
-

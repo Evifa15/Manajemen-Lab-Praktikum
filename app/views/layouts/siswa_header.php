@@ -20,12 +20,12 @@
                         <span>Dashboard</span>
                     </a>
                     <a href="<?= BASEURL; ?>/siswa/katalog" class="sidebar-item" id="nav-katalog-siswa">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                         <span>Katalog Barang</span>
                     </a>
                     <a href="<?= BASEURL; ?>/siswa/pengembalian" class="sidebar-item" id="nav-pengembalian-siswa">
-                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8a4 4 0 00-4 4v1m12-8l-4-4m4 4l4 4m-4-4v12"></path></svg>
-                        <span>Pengembalian Barang</span>
+                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                        <span>Pengembalian</span>
                     </a>
                     <a href="<?= BASEURL; ?>/siswa/riwayat" class="sidebar-item" id="nav-riwayat-siswa">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -35,7 +35,7 @@
             </div>
             <div class="logout-button-wrapper">
                 <a href="<?= BASEURL; ?>/logout" class="logout-button">
-                    <svg fill="currentColor" viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" height="20" viewBox="0 0 24 24" width="20"><path d="M0 0h24v24H0z" fill="none"/><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
                     <span>Logout</span>
                 </a>
             </div>
@@ -43,8 +43,12 @@
 
         <div class="main-content">
             <header class="header">
-                <h2><?= $title; ?></h2>
                 <div class="user-profile">
+                    <a href="<?= BASEURL; ?>/siswa/profile" class="profile-link" title="Lihat Profil">
+                         <div class="profile-picture-container">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" class="profile-default-icon"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg>
+                         </div>
+                    </a>
                     <span class="user-greeting">Selamat datang, <strong><?= $_SESSION['username'] ?? 'Siswa'; ?></strong>!</span>
                 </div>
             </header>

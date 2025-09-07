@@ -73,4 +73,20 @@ class Database {
     public function rowCount() {
         return $this->stmt->rowCount();
     }
+
+    public function beginTransaction() {
+        $this->dbh->beginTransaction();
+    }
+
+    public function commit() {
+        $this->dbh->commit();
+    }
+
+    public function rollBack() {
+        $this->dbh->rollBack();
+    }
+
+    public function lastInsertId() {
+        return $this->dbh->lastInsertId();
+    }
 }

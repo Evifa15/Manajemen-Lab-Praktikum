@@ -20,54 +20,67 @@ class AdminController {
     }
     
     // --- METODE MANAJEMEN PENGGUNA ---
-    public function manajemenPengguna($halaman = 1) {
+     public function manajemenPengguna($halaman = 1) {
         $this->checkAuth();
         $userModel = new User_model();
+        
+        // 1. Tangkap input dari URL (jika ada)
+        $keyword = $_GET['search'] ?? null;
+        $role = $_GET['filter_role'] ?? null;
+
         $halaman = max(1, (int)$halaman);
-        $limit = 10;
+        $limit = 5; // Tetap 5 baris per halaman
         $offset = ($halaman - 1) * $limit;
-        $totalPengguna = $userModel->countAllUsers();
+
+        // 2. Buat array filter untuk dikirim ke model
+        $filters = [
+            'keyword' => $keyword,
+            'role' => $role
+        ];
+
+        // 3. Panggil model dengan filter
+        $totalPengguna = $userModel->countAllUsers($filters);
         $totalHalaman = ceil($totalPengguna / $limit);
+        
         $data = [
             'title' => 'Manajemen Pengguna',
-            'users' => $userModel->getUsersPaginated($offset, $limit),
+            'users' => $userModel->getUsersPaginated($offset, $limit, $filters),
             'total_halaman' => $totalHalaman,
             'halaman_aktif' => $halaman,
-            'total_pengguna' => $totalPengguna
+            'total_pengguna' => $totalPengguna,
+            'filters' => $filters // 4. Kirim filter kembali ke view
         ];
+        
         $this->view('admin/manajemen_pengguna', $data);
     }
     
-    public function tambahPengguna() {
+   public function tambahPengguna() {
         $this->checkAuth();
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $userModel = new User_model();
             
-            // Kolom email dihapus dari validasi karena sudah tidak ada di tabel users
-            if (empty($_POST['username']) || empty($_POST['id_pengguna']) || empty($_POST['password']) || empty($_POST['role'])) {
-                Flasher::setFlash('Gagal menambah pengguna!', 'Pastikan semua kolom terisi.', 'danger');
+            if (empty($_POST['username']) || empty($_POST['id_pengguna']) || empty($_POST['password']) || empty($_POST['role']) || empty($_POST['email'])) {
+                Flasher::setFlash('Gagal!', 'Pastikan semua kolom terisi.', 'danger');
                 header('Location: ' . BASEURL . '/admin/pengguna');
                 exit;
             }
             
             if ($userModel->findUserByUsername($_POST['username'])) {
-                Flasher::setFlash('Gagal menambah pengguna!', 'Nama pengguna sudah ada.', 'danger');
+                Flasher::setFlash('Gagal!', 'Nama pengguna sudah ada.', 'danger');
                 header('Location: ' . BASEURL . '/admin/pengguna');
                 exit;
             }
 
-            if ($userModel->tambahUser($_POST) > 0) {
+            // Panggil fungsi baru yang sudah mendukung transaksi
+            if ($userModel->createUserWithRole($_POST) > 0) {
                 Flasher::setFlash('Berhasil!', 'Pengguna baru berhasil ditambahkan.', 'success');
-                header('Location: ' . BASEURL . '/admin/pengguna');
-                exit;
             } else {
                 Flasher::setFlash('Gagal!', 'Terjadi kesalahan saat menambahkan pengguna.', 'danger');
-                header('Location: ' . BASEURL . '/admin/pengguna');
-                exit;
             }
+            header('Location: ' . BASEURL . '/admin/pengguna');
+            exit;
         }
     }
-
     public function hapusPengguna($id) {
         $this->checkAuth();
         
@@ -86,6 +99,15 @@ class AdminController {
         $this->checkAuth();
         $userModel = new User_model();
         $user = $userModel->getUserById($id);
+        
+        header('Content-Type: application/json');
+        echo json_encode($user);
+    }
+
+    public function getPenggunaDetailById($id) {
+        $this->checkAuth(); // BENAR: Menggunakan panah
+        $userModel = new User_model();
+        $user = $userModel->getUserDetailById($id); // BENAR: Menggunakan panah
         
         header('Content-Type: application/json');
         echo json_encode($user);
@@ -109,19 +131,32 @@ class AdminController {
     public function manajemenBarang($halaman = 1) {
         $this->checkAuth();
         $barangModel = new Barang_model();
+        
+        // Tangkap input dari URL untuk search dan filter
+        $keyword = $_GET['search'] ?? null;
+        $kondisi = $_GET['filter_kondisi'] ?? null;
+
         $halaman = max(1, (int)$halaman);
-        $limit = 10;
+        $limit = 5; // 3. Pagination diubah menjadi 5 baris
         $offset = ($halaman - 1) * $limit;
-        $totalBarang = $barangModel->countAllBarang();
+
+        // Buat array filter untuk dikirim ke model
+        $filters = [
+            'keyword' => $keyword,
+            'kondisi' => $kondisi
+        ];
+        
+        $totalBarang = $barangModel->countAllBarang($filters);
         $totalHalaman = ceil($totalBarang / $limit);
+        
         $data = [
             'title' => 'Manajemen Barang',
-            'username' => $_SESSION['username'],
-            'items' => $barangModel->getBarangPaginated($offset, $limit),
+            'items' => $barangModel->getBarangPaginated($offset, $limit, $filters),
             'total_halaman' => $totalHalaman,
             'halaman_aktif' => $halaman,
-            'total_barang' => $totalBarang
+            'filters' => $filters // Kirim filter kembali ke view
         ];
+        
         $this->view('admin/manajemen_barang', $data);
     }
     public function barang($halaman = 1) { $this->manajemenBarang($halaman); }
