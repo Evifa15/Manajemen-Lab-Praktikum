@@ -114,7 +114,6 @@ elseif ($controller === 'admin') {
     elseif ($method === 'get-siswa-by-id' && !empty($param1)) { $adminController->getSiswaById($param1); }
     elseif ($method === 'ubah-siswa') { $adminController->ubahSiswa(); }
     elseif ($method === 'hapus-siswa' && !empty($param1) && !empty($param2)) { $adminController->hapusSiswa($param1, $param2); }
-    // ✅ PERBAIKAN: Mengubah rute dari 'detail-siswa' menjadi 'detailSiswa'
     elseif ($method === 'detailSiswa' && !empty($param1)) { $adminController->detailSiswa($param1); }
     
     // --- Manajemen Laporan ---
@@ -171,7 +170,9 @@ elseif ($controller === 'siswa') {
     } elseif ($method === 'katalog') {
         $halaman = $param1 ?? 1;
         $siswaController->katalogBarang($halaman);
-    } elseif ($method === 'pengembalian') {
+    } 
+    // ✅ PERBAIKAN: Hapus rute detail barang untuk siswa
+    elseif ($method === 'pengembalian') {
         $siswaController->pengembalianBarang();
     } elseif ($method === 'riwayat') {
         $halaman = $param1 ?? 1;

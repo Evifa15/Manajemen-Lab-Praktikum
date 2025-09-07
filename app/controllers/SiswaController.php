@@ -38,8 +38,15 @@ class SiswaController {
         $limit = 9; // Jumlah barang yang ditampilkan per halaman
         $offset = ($halaman - 1) * $limit;
         
-        $items = $barangModel->getBarangPaginated($offset, $limit);
-        $totalBarang = $barangModel->countAllBarang();
+        // ✅ PERBAIKAN: Tangkap nilai filter dari URL
+        $filters = [
+            'keyword' => $_GET['search'] ?? null,
+            'ketersediaan' => $_GET['filter_ketersediaan'] ?? null,
+        ];
+        
+        // ✅ PERBAIKAN: Kirim filter ke model
+        $items = $barangModel->getBarangPaginated($offset, $limit, $filters);
+        $totalBarang = $barangModel->countAllBarang($filters);
         $totalHalaman = ceil($totalBarang / $limit);
 
         $data = [
@@ -47,7 +54,8 @@ class SiswaController {
             'username' => $_SESSION['username'],
             'items' => $items,
             'total_halaman' => $totalHalaman,
-            'halaman_aktif' => $halaman
+            'halaman_aktif' => $halaman,
+            'filters' => $filters // Kirim filter kembali ke view
         ];
         
         $this->view('siswa/katalog_barang', $data);

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $title; ?> - Lab Praktikum</title>
     <link rel="stylesheet" href="<?= BASEURL; ?>/css/main-style.css">
+    <link rel="stylesheet" href="<?= BASEURL; ?>/css/siswa-style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -36,10 +37,10 @@
             <div class="logout-button-wrapper">
                 <a href="<?= BASEURL; ?>/logout" class="logout-button">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" height="20" viewBox="0 0 24 24" width="20"><path d="M0 0h24v24H0z" fill="none"/><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-                    <span>Logout</span>
-                </a>
-            </div>
-        </aside>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </aside>
 
         <div class="main-content">
             <header class="header">
@@ -47,8 +48,8 @@
                     <a href="<?= BASEURL; ?>/siswa/profile" class="profile-link" title="Lihat Profil">
                          <div class="profile-picture-container">
                             <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" class="profile-default-icon"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg>
-                         </div>
-                    </a>
+                             </div>
+                        </a>
                     <span class="user-greeting">Selamat datang, <strong><?= $_SESSION['username'] ?? 'Siswa'; ?></strong>!</span>
                 </div>
             </header>
