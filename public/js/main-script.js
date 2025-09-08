@@ -33,22 +33,4 @@ document.addEventListener('DOMContentLoaded', () => {
             window.addEventListener('click', (e) => { if (e.target === universalDeleteModal) closeModal(); });
         }
     }
-
-    // ===================================================
-    // LOGIKA UNTUK HALAMAN KATALOG SISWA
-    // ===================================================
-    const katalogGrid = document.querySelector('.katalog-grid');
-    if (katalogGrid) {
-        const tombolKeranjang = document.querySelectorAll('.btn-keranjang');
-
-        tombolKeranjang.forEach(tombol => {
-            tombol.addEventListener('click', function() {
-                const card = this.closest('.katalog-card');
-                const namaBarang = card.querySelector('.katalog-title').textContent;
-                alert(`"${namaBarang}" telah ditambahkan ke keranjang! (Fungsionalitas penuh akan dikembangkan)`);
-            });
-        });
-
-        console.log('Skrip untuk katalog berhasil dimuat.');
-    }
 });

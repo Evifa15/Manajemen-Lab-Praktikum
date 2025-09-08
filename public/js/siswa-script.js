@@ -1,44 +1,37 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const BASEURL = "<?= BASEURL; ?>";
+    
+    console.log('DEBUG: siswa-script.js dimuat.');
 
-    // --- Fungsionalitas Tombol Keranjang ---
+    // Logika untuk Modal Keranjang
     const cartButton = document.querySelector('.cart-button');
-    if (cartButton) {
-        cartButton.addEventListener('click', () => {
-            alert('Fungsionalitas keranjang akan datang!');
-        });
-    }
+    const keranjangModal = document.getElementById('keranjangModal');
 
-    // --- Fungsionalitas Tombol Tambah ke Keranjang ---
-    const addToCartButtons = document.querySelectorAll('.btn-keranjang');
-    if (addToCartButtons) {
-        addToCartButtons.forEach(button => {
-            button.addEventListener('click', async () => {
-                const itemId = button.dataset.id;
-                
-                try {
-                    const response = await fetch(`${BASEURL}/siswa/ajukan-peminjaman`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `barang_id=${itemId}`
-                    });
+    console.log('DEBUG: Mencari tombol keranjang:', cartButton);
+    console.log('DEBUG: Mencari modal keranjang:', keranjangModal);
 
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        alert(result.message);
-                        // Opsional: perbarui tampilan setelah berhasil
-                        window.location.reload(); 
-                    } else {
-                        alert(result.message);
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('Terjadi kesalahan saat mengajukan peminjaman.');
-                }
-            });
+    if (cartButton && keranjangModal) {
+        console.log('DEBUG: Tombol dan modal ditemukan, event listener ditambahkan.');
+        const closeBtn = keranjangModal.querySelector('.close-button');
+
+        cartButton.addEventListener('click', (e) => {
+            e.preventDefault(); // Mencegah aksi default
+            console.log('DEBUG: Tombol keranjang diklik! Menambahkan class active.');
+            // PERBAIKAN: Gunakan classList.add('active') untuk menampilkan modal
+            keranjangModal.classList.add('active'); 
         });
+
+        const closeModal = () => {
+            // PERBAIKAN: Gunakan classList.remove('active') untuk menyembunyikan modal
+            keranjangModal.classList.remove('active');
+        };
+
+        closeBtn.addEventListener('click', closeModal);
+        window.addEventListener('click', (e) => {
+            if (e.target === keranjangModal) {
+                closeModal();
+            }
+        });
+    } else {
+        console.error('DEBUG: Tombol keranjang atau modal tidak ditemukan. Periksa kembali class/id di HTML.');
     }
 });

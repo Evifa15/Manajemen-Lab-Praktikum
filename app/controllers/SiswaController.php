@@ -33,21 +33,27 @@ class SiswaController {
     public function katalogBarang($halaman = 1) {
         $this->checkAuth();
         $barangModel = new Barang_model();
+        $siswaModel = new Siswa_model(); // Tambahkan model siswa
         
         $halaman = max(1, (int)$halaman);
-        $limit = 9; // Jumlah barang yang ditampilkan per halaman
+        $limit = 15;
         $offset = ($halaman - 1) * $limit;
         
-        // ✅ PERBAIKAN: Tangkap nilai filter dari URL
         $filters = [
             'keyword' => $_GET['search'] ?? null,
-            'ketersediaan' => $_GET['filter_ketersediaan'] ?? null,
+            'ketersediaan' => $_GET['filter_ketersediaan'] ?? null
         ];
         
-        // ✅ PERBAIKAN: Kirim filter ke model
         $items = $barangModel->getBarangPaginated($offset, $limit, $filters);
         $totalBarang = $barangModel->countAllBarang($filters);
         $totalHalaman = ceil($totalBarang / $limit);
+
+        // Ambil data detail barang yang ada di keranjang
+        $keranjang_ids = $_SESSION['keranjang'] ?? [];
+        $data_keranjang = $barangModel->getBarangByIds($keranjang_ids);
+        
+        // Ambil data siswa yang sedang login
+        $data_siswa = $siswaModel->getSiswaByUserId($_SESSION['user_id']);
 
         $data = [
             'title' => 'Katalog Barang',
@@ -55,45 +61,37 @@ class SiswaController {
             'items' => $items,
             'total_halaman' => $totalHalaman,
             'halaman_aktif' => $halaman,
-            'filters' => $filters // Kirim filter kembali ke view
+            'filters' => $filters,
+            'jumlah_keranjang' => count($keranjang_ids),
+            'data_keranjang' => $data_keranjang,
+            'data_siswa' => $data_siswa // Kirim data siswa ke view
         ];
         
         $this->view('siswa/katalog_barang', $data);
     }
 
     /**
-     * Memproses pengajuan peminjaman barang oleh siswa.
-     * Method ini akan dipanggil dari form di halaman katalog.
+     * Memproses penambahan barang ke keranjang (session).
      */
-    public function ajukanPeminjaman() {
+    public function tambahKeKeranjang() {
         $this->checkAuth();
 
         if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['barang_id'])) {
             $barangModel = new Barang_model();
-            $peminjamanModel = new Peminjaman_model();
-
             $barang_id = $_POST['barang_id'];
-            $user_id = $_SESSION['user_id'];
+
+            if (!isset($_SESSION['keranjang'])) {
+                $_SESSION['keranjang'] = [];
+            }
 
             $barang = $barangModel->getBarangById($barang_id);
 
-            // 1. Cek ketersediaan stok barang
             if ($barang && $barang['jumlah'] > 0) {
-                
-                // 2. Buat data untuk dimasukkan ke tabel peminjaman
-                $dataPeminjaman = [
-                    'user_id' => $user_id,
-                    'barang_id' => $barang_id,
-                    'tanggal_pinjam' => date('Y-m-d H:i:s'),
-                    'status' => 'Menunggu Verifikasi' // Status awal
-                ];
-
-                // 3. Tambahkan data peminjaman dan kurangi stok
-                if ($peminjamanModel->tambahPeminjaman($dataPeminjaman) > 0) {
-                    $barangModel->kurangiStok($barang_id, 1);
-                    Flasher::setFlash('Berhasil!', 'Pengajuan peminjaman telah dikirim.', 'success');
+                if (!in_array($barang_id, $_SESSION['keranjang'])) {
+                    $_SESSION['keranjang'][] = $barang_id;
+                    Flasher::setFlash('Berhasil!', 'Barang ditambahkan ke keranjang.', 'success');
                 } else {
-                    Flasher::setFlash('Gagal!', 'Terjadi kesalahan saat mengajukan peminjaman.', 'danger');
+                    Flasher::setFlash('Info!', 'Barang sudah ada di keranjang.', 'danger');
                 }
             } else {
                 Flasher::setFlash('Gagal!', 'Stok barang sudah habis.', 'danger');
@@ -104,8 +102,44 @@ class SiswaController {
     }
     
     /**
+     * Menghapus item dari keranjang (session).
+     */
+    public function hapusDariKeranjang($id) {
+        $this->checkAuth();
+        if (isset($_SESSION['keranjang'])) {
+            $key = array_search($id, $_SESSION['keranjang']);
+            if ($key !== false) {
+                unset($_SESSION['keranjang'][$key]);
+                Flasher::setFlash('Berhasil!', 'Item dihapus dari keranjang.', 'success');
+            }
+        }
+        header('Location: ' . BASEURL . '/siswa/katalog');
+        exit;
+    }
+
+    /**
+     * Memproses semua item di keranjang untuk diajukan sebagai peminjaman.
+     */
+    public function prosesPeminjaman() {
+        $this->checkAuth();
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            // Logika untuk menyimpan data peminjaman ke database akan dibuat di sini.
+            // Termasuk validasi, pengecekan stok ulang, dan transaksi database.
+
+            // Untuk sekarang, kita kosongkan keranjang dan beri notifikasi.
+            unset($_SESSION['keranjang']);
+            Flasher::setFlash('Berhasil!', 'Pengajuan Anda telah dikirim dan sedang menunggu verifikasi.', 'success');
+            header('Location: ' . BASEURL . '/siswa/riwayat');
+            exit;
+        } else {
+            header('Location: ' . BASEURL . '/siswa/katalog');
+            exit;
+        }
+    }
+
+    /**
      * Menampilkan halaman pengembalian barang.
-     * (Fungsionalitas backend belum diimplementasikan)
      */
     public function pengembalianBarang() {
         $this->checkAuth();
@@ -118,7 +152,6 @@ class SiswaController {
 
     /**
      * Menampilkan riwayat peminjaman barang untuk siswa yang sedang login.
-     * @param int $halaman Nomor halaman saat ini.
      */
     public function riwayatPeminjaman($halaman = 1) {
         $this->checkAuth();
@@ -155,10 +188,9 @@ class SiswaController {
         $data['profile'] = $profileModel->getProfileByRoleAndUserId($_SESSION['role'], $_SESSION['user_id']);
         $data['title'] = 'Profil Saya';
         
-        // Memuat view profile secara langsung
         extract($data);
         require_once '../app/views/layouts/siswa_header.php';
-        require_once '../app/views/admin/profile.php'; // Sementara menggunakan view profile yang sama
+        require_once '../app/views/admin/profile.php';
         require_once '../app/views/layouts/siswa_footer.php';
     }
 
@@ -192,8 +224,6 @@ class SiswaController {
 
     /**
      * Helper function untuk memuat file view beserta header dan footer.
-     * @param string $view Path ke file view.
-     * @param array $data Data yang akan diekstrak untuk digunakan di view.
      */
     public function view($view, $data = []) {
         extract($data);

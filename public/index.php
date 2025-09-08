@@ -178,14 +178,17 @@ elseif ($controller === 'siswa') {
         $halaman = $param1 ?? 1;
         $siswaController->riwayatPeminjaman($halaman);
     } 
-    elseif ($method === 'ajukan-peminjaman') {
-        $siswaController->ajukanPeminjaman();
+    elseif ($method === 'tambah-ke-keranjang') { // Diubah dari ajukan-peminjaman
+    $siswaController->tambahKeKeranjang();   // Diubah dari ajukanPeminjaman
     }
     elseif ($method === 'profile') {
         $siswaController->profile();
     }
     elseif ($method === 'change-password') {
         $siswaController->changePassword();
+    }
+    elseif ($method === 'hapus-dari-keranjang' && !empty($param1)) {
+        $siswaController->hapusDariKeranjang($param1);
     }
     else {
         http_response_code(404);

@@ -100,4 +100,10 @@ class Siswa_model {
         $this->db->execute();
         return $this->db->rowCount();
     }
+
+     public function getSiswaByUserId($user_id) {
+        $this->db->query('SELECT * FROM ' . $this->table . ' WHERE user_id = :user_id');
+        $this->db->bind(':user_id', $user_id);
+        return $this->db->single();
+    }
 }
