@@ -18,10 +18,65 @@ class GuruController {
 
     public function verifikasiPeminjaman() {
         $this->checkAuth();
-        $data = [ 'title' => 'Verifikasi Peminjaman', 'username' => $_SESSION['username'] ];
+        $peminjamanModel = new Peminjaman_model();
+        $guruModel = new Guru_model();
+
+        // Dapatkan data guru yang sedang login
+        $guru = $guruModel->getGuruByUserId($_SESSION['user_id']);
+        
+        $requests = []; // Siapkan array kosong sebagai default
+        
+        // PERBAIKAN: Hanya jalankan query jika data guru ditemukan
+        if ($guru && isset($guru['id'])) {
+            // Ambil data peminjaman yang perlu diverifikasi oleh guru ini
+            $requests = $peminjamanModel->getPeminjamanForVerification($guru['id']);
+        } else {
+            // Beri pesan jika profil guru tidak lengkap
+            Flasher::setFlash('Peringatan!', 'Data profil guru Anda tidak lengkap. Silakan hubungi Administrator.', 'danger');
+        }
+
+        $data = [ 
+            'title' => 'Verifikasi Peminjaman', 
+            'username' => $_SESSION['username'],
+            'requests' => $requests
+        ];
+        
         $this->view('guru/verifikasi_peminjaman', $data);
     }
     
+    public function prosesVerifikasi() {
+        $this->checkAuth();
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $peminjamanModel = new Peminjaman_model();
+            $barangModel = new Barang_model();
+
+            $peminjaman_id = $_POST['peminjaman_id'];
+            $status = $_POST['status']; // 'Disetujui' atau 'Ditolak'
+
+            $peminjaman = $peminjamanModel->getPeminjamanById($peminjaman_id);
+
+            if (!$peminjaman) {
+                Flasher::setFlash('Gagal!', 'Data peminjaman tidak ditemukan.', 'danger');
+                header('Location: ' . BASEURL . '/guru/verifikasi');
+                exit;
+            }
+
+            if ($status === 'Ditolak') {
+                $barangModel->tambahStok($peminjaman['barang_id'], 1);
+            }
+            
+            if ($peminjamanModel->updateStatusPeminjaman($peminjaman_id, $status) > 0) {
+                Flasher::setFlash('Berhasil!', 'Status peminjaman telah diperbarui.', 'success');
+            } else {
+                Flasher::setFlash('Gagal!', 'Gagal memperbarui status peminjaman.', 'danger');
+            }
+        }
+
+        header('Location: ' . BASEURL . '/guru/verifikasi');
+        exit;
+    }
+
     public function daftarSiswaWali() {
         $this->checkAuth();
         $data = [ 'title' => 'Daftar Siswa Wali', 'username' => $_SESSION['username'] ];
@@ -43,10 +98,9 @@ class GuruController {
         $data['profile'] = $profileModel->getProfileByRoleAndUserId($_SESSION['role'], $_SESSION['user_id']);
         $data['title'] = 'Profil Saya';
         
-        // ✅ PERBAIKAN: Memuat header dan footer yang benar untuk guru
         extract($data);
         require_once '../app/views/layouts/guru_header.php';
-        require_once '../app/views/admin/profile.php'; // Tetap menggunakan view profile yang sama
+        require_once '../app/views/admin/profile.php';
         require_once '../app/views/layouts/guru_footer.php';
     }
 

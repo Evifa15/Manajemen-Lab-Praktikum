@@ -9,7 +9,7 @@ class Kelas_model {
     }
 
     public function getKelasPaginated($offset, $limit, $keyword = null) {
-        $sql = 'SELECT k.id, k.nama_kelas, k.wali_kelas_id, g.nama as nama_wali_kelas 
+        $sql = 'SELECT k.id, k.nama_kelas, k.wali_kelas_id, g.nama as nama_wali_kelas, g.nip 
                 FROM ' . $this->table . ' k
                 LEFT JOIN guru g ON k.wali_kelas_id = g.id';
         
@@ -48,9 +48,7 @@ class Kelas_model {
         return $result ? (int)$result['total'] : 0;
     }
     
-    // Metode lainnya (getKelasById, tambahKelas, dll) tetap sama...
     public function getKelasById($id) {
-        // ✅ PERBAIKAN: JOIN dengan tabel guru untuk mendapat info wali kelas
         $this->db->query(
             'SELECT k.*, g.nama as nama_wali_kelas, g.nip 
              FROM ' . $this->table . ' k
@@ -89,5 +87,91 @@ class Kelas_model {
 
         $this->db->execute();
         return $this->db->rowCount();
+    }
+
+    public function tambahKelasBatch($dataKelas) {
+        if (empty($dataKelas)) {
+            return ['success' => 0, 'failed' => 0];
+        }
+
+        $this->db->beginTransaction();
+        $berhasil = 0;
+        $gagal = 0;
+
+        $query = "INSERT INTO " . $this->table . " (nama_kelas, wali_kelas_id) VALUES (:nama_kelas, :wali_kelas_id)";
+
+        foreach ($dataKelas as $kelas) {
+            try {
+                $this->db->query($query);
+                $this->db->bind('nama_kelas', $kelas['nama_kelas']);
+                $this->db->bind('wali_kelas_id', $kelas['wali_kelas_id']);
+                $this->db->execute();
+                if ($this->db->rowCount() > 0) {
+                    $berhasil++;
+                } else {
+                    $gagal++;
+                }
+            } catch (Exception $e) {
+                // Tangani error, misal duplikat nama kelas
+                $gagal++;
+            }
+        }
+
+        if ($gagal > 0) {
+            $this->db->rollBack();
+            // Jika ada yang gagal, kita batalkan semua agar konsisten
+            return ['success' => 0, 'failed' => count($dataKelas)];
+        } else {
+            $this->db->commit();
+            return ['success' => $berhasil, 'failed' => $gagal];
+        }
+    }
+
+    /**
+     * Menghapus beberapa kelas sekaligus berdasarkan array ID.
+     * @param array $ids Array berisi ID kelas yang akan dihapus.
+     * @return int Jumlah baris yang berhasil dihapus.
+     */
+    
+    // ================== PERBAIKAN DI SINI ==================
+    public function hapusKelasMassal($ids) {
+        if (empty($ids)) {
+            return 0;
+        }
+        // Buat placeholder sebanyak jumlah ID, contoh: (?,?,?)
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+        // Langsung hapus kelas dari tabel kelas. Baris yang error sudah dihilangkan.
+        $this->db->query("DELETE FROM " . $this->table . " WHERE id IN ({$placeholders})");
+        foreach ($ids as $k => $id) {
+            $this->db->bind($k + 1, $id);
+        }
+        $this->db->execute();
+        
+        return $this->db->rowCount();
+    }
+    // =======================================================
+
+    public function hapusGuruMassal() {
+        // Logika ini salah tempat dan seharusnya berada di AdminController.
+        // Biarkan seperti ini agar tidak menimbulkan error baru,
+        // namun idealnya fungsi ini dihapus dari Model.
+        $this->checkAuth();
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && !empty($_POST['ids'])) {
+            $ids = $_POST['ids'];
+            $guruModel = new Guru_model();
+            $rowCount = $guruModel->hapusGuruMassal($ids);
+
+            if ($rowCount > 0) {
+                Flasher::setFlash('Berhasil!', "{$rowCount} data guru berhasil dihapus.", 'success');
+            } else {
+                Flasher::setFlash('Gagal!', 'Tidak ada data guru yang dihapus.', 'danger');
+            }
+        } else {
+            Flasher::setFlash('Gagal!', 'Tidak ada data yang dipilih untuk dihapus.', 'danger');
+        }
+        // Redirect kembali ke tab guru
+        header('Location: ' . BASEURL . '/admin/kelas/guru');
+        exit;
     }
 }

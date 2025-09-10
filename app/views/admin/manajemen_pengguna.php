@@ -112,11 +112,10 @@
                 <div class="form-row">
                     <div class="form-group">
                         <select id="role" name="role" required>
-                            <option value="" disabled selected>Pilih Peran</option>
-                            <option value="admin">Admin</option>
-                            <option value="guru">Guru</option>
-                            <option value="siswa">Siswa</option>
-                        </select>
+                        <option value="" disabled selected>Pilih Peran</option>
+                        <option value="admin">Admin</option>
+                        <option value="guru">Guru</option>
+                        </select>>
                     </div>
                 </div>
                 <button type="submit">Simpan</button>

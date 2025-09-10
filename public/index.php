@@ -66,16 +66,14 @@ elseif ($controller === 'admin') {
         $adminController->index();
     } 
     
-    // --- Manajemen Pengguna (CRUD) ---
+    // --- Manajemen Pengguna ---
     elseif ($method === 'pengguna') { $adminController->manajemenPengguna($param1); } 
     elseif ($method === 'tambah-pengguna') { $adminController->tambahPengguna(); }
     elseif ($method === 'ubah-pengguna') { $adminController->ubahPengguna(); }
     elseif ($method === 'hapus-pengguna' && !empty($param1)) { $adminController->hapusPengguna($param1); }
-    elseif ($method === 'get-pengguna-by-id' && !empty($param1)) { $adminController->getPenggunaById($param1); } 
     elseif ($method === 'get-pengguna-detail-by-id' && !empty($param1)) { $adminController->getPenggunaDetailById($param1); }
-    elseif ($method === 'get-pengguna-by-id' && !empty($param1)) { $adminController->getPenggunaById($param1); } 
     
-    // --- Manajemen Barang (CRUD) ---
+    // --- Manajemen Barang ---
     elseif ($method === 'barang') {
         if (isset($url_parts[2]) && $url_parts[2] === 'detail' && isset($url_parts[3])) {
             $adminController->detailBarang($url_parts[3]);
@@ -89,7 +87,13 @@ elseif ($controller === 'admin') {
     elseif ($method === 'hapus-barang' && !empty($param1)) { $adminController->hapusBarang($param1); }
     elseif ($method === 'get-barang-by-id' && !empty($param1)) { $adminController->getBarangById($param1); } 
     
-    // --- Manajemen Kelas & Guru (CRUD) ---
+    // --- Import & Hapus Massal ---
+    elseif ($method === 'import-kelas') { $adminController->importKelas(); }
+    elseif ($method === 'import-guru') { $adminController->importGuru(); }
+    elseif ($method === 'hapus-kelas-massal') { $adminController->hapusKelasMassal(); }
+    elseif ($method === 'hapus-guru-massal') { $adminController->hapusGuruMassal(); }
+
+    // --- Manajemen Kelas & Guru ---
     elseif ($method === 'kelas') {
         $tab = $param1 ?: 'kelas';
         $halaman = $param2 ?: 1;
@@ -115,7 +119,9 @@ elseif ($controller === 'admin') {
     elseif ($method === 'ubah-siswa') { $adminController->ubahSiswa(); }
     elseif ($method === 'hapus-siswa' && !empty($param1) && !empty($param2)) { $adminController->hapusSiswa($param1, $param2); }
     elseif ($method === 'detailSiswa' && !empty($param1)) { $adminController->detailSiswa($param1); }
-    
+    // --- PENAMBAHAN RUTE BARU UNTUK SISWA MASSAL ---
+    elseif ($method === 'import-siswa') { $adminController->importSiswa(); }
+    elseif ($method === 'hapus-siswa-massal') { $adminController->hapusSiswaMassal(); }
     // --- Manajemen Laporan ---
     elseif ($method === 'laporan') {
         $halaman = $param1 ?? 1;
@@ -145,6 +151,8 @@ elseif ($controller === 'guru') {
         $guruController->index();
     } elseif ($method === 'verifikasi') {
         $guruController->verifikasiPeminjaman();
+    } elseif ($method === 'proses-verifikasi') {
+        $guruController->prosesVerifikasi();
     } elseif ($method === 'siswa') {
         $guruController->daftarSiswaWali();
     } elseif ($method === 'riwayat') {
@@ -171,24 +179,26 @@ elseif ($controller === 'siswa') {
         $halaman = $param1 ?? 1;
         $siswaController->katalogBarang($halaman);
     } 
-    // ✅ PERBAIKAN: Hapus rute detail barang untuk siswa
     elseif ($method === 'pengembalian') {
         $siswaController->pengembalianBarang();
     } elseif ($method === 'riwayat') {
         $halaman = $param1 ?? 1;
         $siswaController->riwayatPeminjaman($halaman);
     } 
-    elseif ($method === 'tambah-ke-keranjang') { // Diubah dari ajukan-peminjaman
-    $siswaController->tambahKeKeranjang();   // Diubah dari ajukanPeminjaman
+    elseif ($method === 'tambah-ke-keranjang') {
+        $siswaController->tambahKeKeranjang();
+    }
+    elseif ($method === 'hapus-dari-keranjang' && !empty($param1)) {
+        $siswaController->hapusDariKeranjang($param1);
+    }
+    elseif ($method === 'proses-peminjaman') {
+        $siswaController->prosesPeminjaman();
     }
     elseif ($method === 'profile') {
         $siswaController->profile();
     }
     elseif ($method === 'change-password') {
         $siswaController->changePassword();
-    }
-    elseif ($method === 'hapus-dari-keranjang' && !empty($param1)) {
-        $siswaController->hapusDariKeranjang($param1);
     }
     else {
         http_response_code(404);
@@ -202,3 +212,4 @@ else {
     http_response_code(404);
     echo "<h1>404 Not Found</h1> Halaman yang Anda cari tidak ditemukan.";
 }
+

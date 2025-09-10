@@ -2,77 +2,92 @@
 
 <div class="content">
     <div class="main-table-container">
-        <div class="header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-            <h2>Detail Siswa</h2>
-            <a href="<?= BASEURL; ?>/admin/detailKelas/<?= $data['siswa']['kelas_id'] ?? '' ?>" class="btn btn-secondary" style="text-decoration: none; padding: 10px 15px; border-radius: 5px;">Kembali ke Daftar Siswa</a>
-        </div>
+        <?php if ($data['kelas']): ?>
+        <hr style="margin: 2rem 0;">
 
-        <?php if ($data['siswa']): ?>
-        <div class="detail-card-wrapper" style="margin-top: 0;">
-            <div class="detail-card" style="padding: 2rem; max-width: 900px; margin: auto; display:flex; gap: 2rem; align-items: flex-start;">
-                
-                <div class="profile-sidebar" style="flex-shrink: 0; width: 200px; text-align: center;">
-                    <div style="width: 150px; height: 150px; border-radius: 8px; overflow: hidden; margin: auto; background-color: #f0f2f5; border: 3px solid #4CAF50;">
-                        <?php
-                            $foto_siswa = $data['siswa']['foto'] ?? 'default.png';
-                            $path_ke_foto = 'img/siswa/' . $foto_siswa;
-                            if (!empty($data['siswa']['foto']) && file_exists($path_ke_foto)) {
-                                $url_foto = BASEURL . '/' . $path_ke_foto;
-                            } else {
-                                $url_foto = BASEURL . '/img/siswa/default.png';
-                            }
-                        ?>
-                        <img src="<?= $url_foto; ?>" alt="Foto Siswa" style="width: 100%; height: 100%; object-fit: cover;">
-                    </div>
-                    
-                    <h3 style="margin-top: 1rem; margin-bottom: 0.5rem;"><?= htmlspecialchars($data['siswa']['nama']); ?></h3>
-                </div>
+        <div class="manajemen-siswa-container">
+            <h4>Daftar Siswa di Kelas Ini</h4>
+            
+            <form action="<?= BASEURL ?>/admin/hapus-siswa-massal" method="POST" id="bulkDeleteSiswaForm">
+                <input type="hidden" name="kelas_id" value="<?= $data['kelas']['id']; ?>">
 
-                <div class="info-section" style="flex-grow: 1;">
-                    <h4>Informasi Pribadi</h4>
-                    <div class="detail-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                        <div class="detail-item">
-                            <span class="detail-label">ID Siswa (NIS/NISN)</span>
-                            <span class="detail-value"><?= htmlspecialchars($data['siswa']['id_siswa']); ?></span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Jenis Kelamin</span>
-                            <span class="detail-value"><?= htmlspecialchars($data['siswa']['jenis_kelamin']); ?></span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Tempat, Tanggal Lahir</span>
-                            <span class="detail-value"><?= htmlspecialchars($data['siswa']['ttl'] ?? '-'); ?></span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Agama</span>
-                            <span class="detail-value"><?= htmlspecialchars($data['siswa']['agama'] ?? '-'); ?></span>
-                        </div>
+                <div class="table-controls-container" style="margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-danger" id="bulkDeleteSiswaBtn" style="display: none;">Hapus Terpilih</button>
+                    
+                    <div class="search-form" style="margin-left:auto;">
+                        <input type="text" name="search" placeholder="Cari nama atau ID siswa..." value="<?= htmlspecialchars($data['search_term'] ?? '') ?>" onchange="this.form.submit()">
                     </div>
-                    
-                    <hr style="margin: 1.5rem 0;">
-                    
-                    <h4>Informasi Kontak</h4>
-                     <div class="detail-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                        <div class="detail-item">
-                            <span class="detail-label">No. HP</span>
-                            <span class="detail-value"><?= htmlspecialchars($data['siswa']['no_hp'] ?? '-'); ?></span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Email</span>
-                            <span class="detail-value"><?= htmlspecialchars($data['siswa']['email'] ?? '-'); ?></span>
-                        </div>
-                         <div class="detail-item" style="grid-column: 1 / -1;">
-                            <span class="detail-label">Alamat</span>
-                            <span class="detail-value" style="white-space: pre-wrap;"><?= htmlspecialchars($data['siswa']['alamat'] ?? '-'); ?></span>
-                        </div>
+
+                    <div class="actions-container">
+                        <button type="button" class="btn btn-secondary" id="importSiswaBtn">Import Siswa</button>
+                        <button type="button" class="add-button" id="addSiswaBtn">+ Tambah Siswa</button>
                     </div>
                 </div>
+            
+                <?php Flasher::flash(); ?>
 
+                <table>
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAllSiswa"></th>
+                            <th>No</th>
+                            <th>Nama Siswa</th>
+                            <th>ID Siswa</th>
+                            <th>Jenis Kelamin</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if (!empty($data['siswa'])):
+                        $no = ($data['halaman_aktif'] - 1) * 10 + 1;
+                        foreach ($data['siswa'] as $siswa): ?>
+                        <tr>
+                            <td><input type="checkbox" name="ids[]" value="<?= $siswa['id']; ?>" class="row-checkbox-siswa"></td>
+                            <td><?= $no++; ?></td>
+                            <td><?= htmlspecialchars($siswa['nama']); ?></td>
+                            <td><?= htmlspecialchars($siswa['id_siswa']); ?></td>
+                            <td><?= htmlspecialchars($siswa['jenis_kelamin']); ?></td>
+                            <td><?= htmlspecialchars($siswa['status']); ?></td>
+                            <td class="action-buttons">
+                                </td>
+                        </tr>
+                        <?php endforeach;
+                    else: ?>
+                        <tr><td colspan="7" style="text-align:center;">Tidak ada data siswa di kelas ini.</td></tr>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </form>
             </div>
-        </div>
+
         <?php else: ?>
-        <p style="text-align:center; margin-top: 2rem;">Data siswa tidak ditemukan.</p>
+            <p style="text-align:center; margin-top: 2rem;">Data kelas tidak ditemukan.</p>
         <?php endif; ?>
+    </div>
+</div>
+
+<div id="importSiswaModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h3 id="importSiswaModalTitle">Import Data Siswa ke Kelas Ini</h3>
+        <form id="importSiswaForm" action="<?= BASEURL; ?>/admin/import-siswa" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="kelas_id" value="<?= $data['kelas']['id'] ?? ''; ?>">
+            <div class="import-instructions" style="background-color: #f0f2f5; border-left: 4px solid #4CAF50; padding: 15px; margin-bottom: 1.5rem; border-radius: 5px; font-size: 14px;">
+                <strong>Petunjuk:</strong>
+                <ul style="padding-left: 20px; margin-top: 10px;">
+                    <li>Gunakan file dengan format <strong>.csv</strong>.</li>
+                    <li>Pastikan file memiliki 3 kolom dengan urutan: <strong>Nama Siswa</strong>, <strong>ID Siswa (NIS/NISN)</strong>, <strong>Jenis Kelamin</strong>.</li>
+                    <li>Baris pertama (header) akan dilewati.</li>
+                    <li>Akun login untuk setiap siswa akan dibuat secara otomatis dengan <strong>Nama Siswa</strong> sebagai username dan <strong>ID Siswa</strong> sebagai password awal.</li>
+                </ul>
+            </div>
+            <div class="form-group">
+                <label for="file_import_siswa">Pilih File untuk Diimpor</label>
+                <input type="file" id="file_import_siswa" name="file_import_siswa" accept=".csv" required style="border: 1px solid #ccc; padding: 10px; border-radius: 5px; width: 100%;">
+            </div>
+            <button type="submit">Unggah dan Proses</button>
+        </form>
     </div>
 </div>
 

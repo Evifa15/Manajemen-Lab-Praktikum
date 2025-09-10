@@ -24,21 +24,18 @@ class AdminController {
         $this->checkAuth();
         $userModel = new User_model();
         
-        // 1. Tangkap input dari URL (jika ada)
         $keyword = $_GET['search'] ?? null;
         $role = $_GET['filter_role'] ?? null;
 
         $halaman = max(1, (int)$halaman);
-        $limit = 5; // Tetap 5 baris per halaman
+        $limit = 5;
         $offset = ($halaman - 1) * $limit;
 
-        // 2. Buat array filter untuk dikirim ke model
         $filters = [
             'keyword' => $keyword,
             'role' => $role
         ];
 
-        // 3. Panggil model dengan filter
         $totalPengguna = $userModel->countAllUsers($filters);
         $totalHalaman = ceil($totalPengguna / $limit);
         
@@ -48,7 +45,7 @@ class AdminController {
             'total_halaman' => $totalHalaman,
             'halaman_aktif' => $halaman,
             'total_pengguna' => $totalPengguna,
-            'filters' => $filters // 4. Kirim filter kembali ke view
+            'filters' => $filters
         ];
         
         $this->view('admin/manajemen_pengguna', $data);
@@ -71,7 +68,6 @@ class AdminController {
                 exit;
             }
 
-            // Panggil fungsi baru yang sudah mendukung transaksi
             if ($userModel->createUserWithRole($_POST) > 0) {
                 Flasher::setFlash('Berhasil!', 'Pengguna baru berhasil ditambahkan.', 'success');
             } else {
@@ -132,15 +128,13 @@ class AdminController {
         $this->checkAuth();
         $barangModel = new Barang_model();
         
-        // Tangkap input dari URL untuk search dan filter
         $keyword = $_GET['search'] ?? null;
         $kondisi = $_GET['filter_kondisi'] ?? null;
 
         $halaman = max(1, (int)$halaman);
-        $limit = 5; // 3. Pagination diubah menjadi 5 baris
+        $limit = 5;
         $offset = ($halaman - 1) * $limit;
 
-        // Buat array filter untuk dikirim ke model
         $filters = [
             'keyword' => $keyword,
             'kondisi' => $kondisi
@@ -154,7 +148,7 @@ class AdminController {
             'items' => $barangModel->getBarangPaginated($offset, $limit, $filters),
             'total_halaman' => $totalHalaman,
             'halaman_aktif' => $halaman,
-            'filters' => $filters // Kirim filter kembali ke view
+            'filters' => $filters
         ];
         
         $this->view('admin/manajemen_barang', $data);
@@ -163,13 +157,11 @@ class AdminController {
     public function tambahBarang() {
         $this->checkAuth();
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            // --- TAMBAHAN KODE: Validasi sisi server untuk kondisi ---
             if (empty($_POST['kondisi'])) {
                 Flasher::setFlash('Gagal!', 'Kondisi barang harus diisi.', 'danger');
                 header('Location: ' . BASEURL . '/admin/barang');
                 exit;
             }
-            // --- AKHIR TAMBAHAN KODE ---
 
             $barangModel = new Barang_model();
 
@@ -203,13 +195,11 @@ class AdminController {
             
             if ($barangModel->tambahBarang($data) > 0) {
                 Flasher::setFlash('Berhasil!', 'Barang baru berhasil ditambahkan.', 'success');
-                header('Location: ' . BASEURL . '/admin/barang');
-                exit;
             } else {
                 Flasher::setFlash('Gagal!', 'Terjadi kesalahan saat menambahkan barang.', 'danger');
-                header('Location: ' . BASEURL . '/admin/barang');
-                exit;
             }
+            header('Location: ' . BASEURL . '/admin/barang');
+            exit;
         }
     }
     public function getBarangById($id) {
@@ -223,13 +213,11 @@ class AdminController {
     public function ubahBarang() {
         $this->checkAuth();
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            // --- TAMBAHAN KODE: Validasi sisi server untuk kondisi ---
             if (empty($_POST['kondisi'])) {
                 Flasher::setFlash('Gagal!', 'Kondisi barang harus diisi.', 'danger');
                 header('Location: ' . BASEURL . '/admin/barang');
                 exit;
             }
-            // --- AKHIR TAMBAHAN KODE ---
             
             $barangModel = new Barang_model();
 
@@ -293,30 +281,37 @@ class AdminController {
     }
     
     // --- METODE MANAJEMEN KELAS & GURU ---
-    public function manajemenKelas($tab = 'kelas', $halaman = 1) {
+    public function manajemenKelas($tab = 'guru', $halaman = 1) {
         $this->checkAuth();
         $kelasModel = new Kelas_model();
         $guruModel = new Guru_model();
 
-        $keyword = $_GET['search'] ?? null;
+        // PERBAIKAN: Ambil kedua keyword pencarian secara terpisah
+        $keywordKelas = $_GET['search_kelas'] ?? null;
+        $keywordGuru = $_GET['search_guru'] ?? null;
+
         $halaman = max(1, (int)$halaman);
         $limit = 5;
         
         $offsetKelas = ($tab === 'kelas') ? ($halaman - 1) * $limit : 0;
         $offsetGuru = ($tab === 'guru') ? ($halaman - 1) * $limit : 0;
 
-        $totalKelas = $kelasModel->countAllKelas($keyword);
+        // Gunakan keyword yang sesuai untuk setiap query
+        $totalKelas = $kelasModel->countAllKelas($keywordKelas);
         $totalHalamanKelas = ceil($totalKelas / $limit);
-        $kelasData = $kelasModel->getKelasPaginated($offsetKelas, $limit, $keyword);
+        $kelasData = $kelasModel->getKelasPaginated($offsetKelas, $limit, $keywordKelas);
 
-        $totalGuru = $guruModel->countAllGuru($keyword);
+        $totalGuru = $guruModel->countAllGuru($keywordGuru);
         $totalHalamanGuru = ceil($totalGuru / $limit);
-        $guruData = $guruModel->getGuruPaginated($offsetGuru, $limit, $keyword);
+        $guruData = $guruModel->getGuruPaginated($offsetGuru, $limit, $keywordGuru);
 
         $data = [
             'title' => 'Manajemen Kelas & Guru',
             'active_tab' => $tab,
-            'search_term' => $keyword,
+            
+            // PERBAIKAN: Kirim kedua keyword ke view
+            'search_term_kelas' => $keywordKelas,
+            'search_term_guru' => $keywordGuru,
             
             'kelas' => $kelasData,
             'total_halaman_kelas' => $totalHalamanKelas,
@@ -398,18 +393,21 @@ class AdminController {
         exit;
     }
     public function tambahGuru() {
-        $this->checkAuth();
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $guruModel = new Guru_model();
-            if ($guruModel->tambahGuru($_POST) > 0) {
-                Flasher::setFlash('Berhasil!', 'Guru baru berhasil ditambahkan.', 'success');
-            } else {
-                Flasher::setFlash('Gagal!', 'Terjadi kesalahan saat menambahkan guru.', 'danger');
-            }
+    $this->checkAuth();
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        $guruModel = new Guru_model();
+
+        // PERUBAHAN: Panggil metode baru yang sudah mencakup pembuatan user
+        if ($guruModel->createGuruAndUserAccount($_POST) > 0) {
+            Flasher::setFlash('Berhasil!', 'Data guru beserta akun login berhasil dibuat.', 'success');
+        } else {
+            Flasher::setFlash('Gagal!', 'Gagal menambahkan guru. Pastikan NIP atau Nama Guru belum pernah terdaftar.', 'danger');
         }
-        header('Location: ' . BASEURL . '/admin/kelas/guru');
-        exit;
     }
+    header('Location: ' . BASEURL . '/admin/kelas/guru');
+    exit;
+}
+
     public function getGuruById($id) {
         $this->checkAuth();
         $guruModel = new Guru_model();
@@ -452,38 +450,39 @@ class AdminController {
 
     // --- METODE MANAJEMEN SISWA ---
     public function tambahSiswa() {
-        $this->checkAuth();
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $siswaModel = new Siswa_model();
+    $this->checkAuth();
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        $siswaModel = new Siswa_model();
+        
+        $namaFoto = 'default.png';
+        if (isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['foto'];
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $namaFoto = uniqid('siswa_') . '.' . $ext;
+            $targetDir = APP_ROOT . '/public/img/siswa/';
             
-            $namaFoto = 'default.png';
-            if (isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
-                $file = $_FILES['foto'];
-                $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-                $namaFoto = uniqid('siswa_') . '.' . $ext;
-                $targetDir = APP_ROOT . '/public/img/siswa/';
-                
-                if (!is_dir($targetDir)) {
-                    mkdir($targetDir, 0777, true);
-                }
+            if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
 
-                if (!move_uploaded_file($file['tmp_name'], $targetDir . $namaFoto)) {
-                    Flasher::setFlash('Gagal!', 'Gagal mengunggah foto.', 'danger');
-                    header('Location: ' . BASEURL . '/admin/detailKelas/' . $_POST['kelas_id']);
-                    exit;
-                }
-            }
-            
-            $data = array_merge($_POST, ['foto' => $namaFoto]);
-            if ($siswaModel->tambahSiswa($data) > 0) {
-                Flasher::setFlash('Berhasil!', 'Siswa baru berhasil ditambahkan.', 'success');
-            } else {
-                Flasher::setFlash('Gagal!', 'Gagal menambahkan siswa. Periksa kembali ID Siswa (tidak boleh sama).', 'danger');
+            if (!move_uploaded_file($file['tmp_name'], $targetDir . $namaFoto)) {
+                Flasher::setFlash('Gagal!', 'Gagal mengunggah foto.', 'danger');
+                header('Location: ' . BASEURL . '/admin/detailKelas/' . $_POST['kelas_id']);
+                exit;
             }
         }
-        header('Location: ' . BASEURL . '/admin/detailKelas/' . $_POST['kelas_id']);
-        exit;
+        
+        // Gabungkan data POST dengan nama file foto
+        $data = array_merge($_POST, ['foto' => $namaFoto]);
+
+        // Panggil metode baru yang sudah mencakup pembuatan user dan profil siswa
+        if ($siswaModel->createSiswaAndUserAccount($data) > 0) {
+            Flasher::setFlash('Berhasil!', 'Data siswa beserta akun login berhasil dibuat.', 'success');
+        } else {
+            Flasher::setFlash('Gagal!', 'Gagal menambahkan siswa. Pastikan ID Siswa atau Nama Siswa belum pernah terdaftar.', 'danger');
+        }
     }
+    header('Location: ' . BASEURL . '/admin/detailKelas/' . $_POST['kelas_id']);
+    exit;
+}
     public function getSiswaById($id) {
         $this->checkAuth();
         $siswaModel = new Siswa_model();
@@ -612,7 +611,7 @@ class AdminController {
         exit();
     }
     
-    // ✅ METODE PROFIL & GANTI PASSWORD (REVISI)
+    // --- METODE PROFIL & GANTI PASSWORD ---
     public function profile() {
         $this->checkAuth();
         $userModel = new User_model();
@@ -622,7 +621,6 @@ class AdminController {
         $data['profile'] = $profileModel->getProfileByRoleAndUserId($_SESSION['role'], $_SESSION['user_id']);
         $data['title'] = 'Profil Saya';
         
-        // Memanggil view secara langsung untuk menghindari masalah path
         extract($data);
         require_once '../app/views/layouts/admin_header.php';
         require_once '../app/views/shared/profile.php';
@@ -654,12 +652,275 @@ class AdminController {
         exit;
     }
 
-    // --- AKHIR DARI METODE PROFIL ---
+    // --- METODE IMPORT & HAPUS MASSAL ---
+    public function importKelas() {
+        $this->checkAuth();
 
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['file_import'])) {
+            $file = $_FILES['file_import'];
+
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                Flasher::setFlash('Gagal!', 'Terjadi error saat mengunggah file.', 'danger');
+                header('Location: ' . BASEURL . '/admin/kelas');
+                exit;
+            }
+
+            $fileType = pathinfo($file['name'], PATHINFO_EXTENSION);
+            if ($fileType != 'csv') {
+                Flasher::setFlash('Gagal!', 'Hanya file format .csv yang didukung saat ini.', 'danger');
+                header('Location: ' . BASEURL . '/admin/kelas');
+                exit;
+            }
+
+            $fileHandle = fopen($file['tmp_name'], 'r');
+            fgetcsv($fileHandle); 
+
+            $dataUntukImport = [];
+            $errors = [];
+            $baris = 1;
+
+            $guruModel = new Guru_model();
+
+            while (($row = fgetcsv($fileHandle)) !== FALSE) {
+                $baris++;
+                $namaKelas = trim($row[0] ?? '');
+                $nipWali = trim($row[2] ?? '');
+
+                if (empty($namaKelas) || empty($nipWali)) {
+                    $errors[] = "Baris {$baris}: Nama Kelas atau NIP Wali Kelas kosong.";
+                    continue;
+                }
+
+                $guru = $guruModel->getGuruByNip($nipWali);
+                if (!$guru) {
+                    $errors[] = "Baris {$baris}: Wali Kelas dengan NIP '{$nipWali}' tidak ditemukan.";
+                    continue;
+                }
+
+                $dataUntukImport[] = [
+                    'nama_kelas' => $namaKelas,
+                    'wali_kelas_id' => $guru['id']
+                ];
+            }
+            fclose($fileHandle);
+
+            if (empty($errors) && !empty($dataUntukImport)) {
+                $kelasModel = new Kelas_model();
+                $hasil = $kelasModel->tambahKelasBatch($dataUntukImport);
+
+                Flasher::setFlash('Berhasil!', "{$hasil['success']} data kelas berhasil diimpor.", 'success');
+            } else {
+                $pesanError = 'Proses import gagal. Detail: <br>' . implode('<br>', $errors);
+                Flasher::setFlash('Gagal!', $pesanError, 'danger');
+            }
+
+        } else {
+            Flasher::setFlash('Gagal!', 'Tidak ada file yang diunggah.', 'danger');
+        }
+
+        header('Location: ' . BASEURL . '/admin/kelas');
+        exit;
+    }
+
+    public function importGuru() {
+        $this->checkAuth();
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['file_import_guru'])) {
+            $file = $_FILES['file_import_guru'];
+
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                Flasher::setFlash('Gagal!', 'Terjadi error saat mengunggah file.', 'danger');
+                header('Location: ' . BASEURL . '/admin/kelas/guru');
+                exit;
+            }
+
+            $fileType = pathinfo($file['name'], PATHINFO_EXTENSION);
+            if ($fileType != 'csv') {
+                Flasher::setFlash('Gagal!', 'Hanya file format .csv yang didukung.', 'danger');
+                header('Location: ' . BASEURL . '/admin/kelas/guru');
+                exit;
+            }
+
+            $fileHandle = fopen($file['tmp_name'], 'r');
+            fgetcsv($fileHandle); // Lewati header
+
+            $dataUntukImport = [];
+            while (($row = fgetcsv($fileHandle)) !== FALSE) {
+                
+                $jenisKelaminRaw = trim($row[2] ?? '');
+                $normalizedJK = strtolower(str_replace(['-', ' '], '', $jenisKelaminRaw));
+
+                $jenisKelaminFinal = '';
+                if ($normalizedJK === 'lakilaki') {
+                    $jenisKelaminFinal = 'Laki laki';
+                } elseif ($normalizedJK === 'perempuan') {
+                    $jenisKelaminFinal = 'Perempuan';
+                }
+
+                $dataUntukImport[] = [
+                    'nama'          => trim($row[0] ?? ''),
+                    'nip'           => trim($row[1] ?? ''),
+                    'jenis_kelamin' => $jenisKelaminFinal,
+                    'no_hp'         => trim($row[3] ?? ''),
+                    'email'         => trim($row[4] ?? ''),
+                    'alamat'        => trim($row[5] ?? '')
+                ];
+            }
+            fclose($fileHandle);
+
+            if (!empty($dataUntukImport)) {
+                $guruModel = new Guru_model();
+                $hasil = $guruModel->tambahGuruBatch($dataUntukImport);
+
+                if ($hasil['failed'] > 0) {
+                    $pesanError = "{$hasil['failed']} data guru gagal diimpor. Detail: <br>" . implode('<br>', $hasil['errors']);
+                    Flasher::setFlash('Import Selesai dengan Error', $pesanError, 'danger');
+                } else {
+                    Flasher::setFlash('Berhasil!', "{$hasil['success']} data guru berhasil diimpor.", 'success');
+                }
+
+            } else {
+                Flasher::setFlash('Gagal!', 'File CSV kosong atau formatnya salah.', 'danger');
+            }
+        } else {
+            Flasher::setFlash('Gagal!', 'Tidak ada file yang diunggah.', 'danger');
+        }
+
+        header('Location: ' . BASEURL . '/admin/kelas/guru');
+        exit;
+    }
+    
+    public function hapusKelasMassal() {
+        $this->checkAuth();
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && !empty($_POST['ids'])) {
+            $ids = $_POST['ids'];
+            $kelasModel = new Kelas_model();
+            $rowCount = $kelasModel->hapusKelasMassal($ids);
+
+            if ($rowCount > 0) {
+                Flasher::setFlash('Berhasil!', "{$rowCount} data kelas berhasil dihapus.", 'success');
+            } else {
+                Flasher::setFlash('Gagal!', 'Tidak ada data kelas yang dihapus.', 'danger');
+            }
+        } else {
+            Flasher::setFlash('Gagal!', 'Tidak ada data yang dipilih untuk dihapus.', 'danger');
+        }
+        header('Location: ' . BASEURL . '/admin/kelas/kelas');
+        exit;
+    }
+
+    public function hapusGuruMassal() {
+        $this->checkAuth();
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && !empty($_POST['ids'])) {
+            $ids = $_POST['ids'];
+            $guruModel = new Guru_model();
+            $rowCount = $guruModel->hapusGuruMassal($ids);
+
+            if ($rowCount > 0) {
+                Flasher::setFlash('Berhasil!', "{$rowCount} data guru berhasil dihapus.", 'success');
+            } else {
+                Flasher::setFlash('Gagal!', 'Tidak ada data guru yang dihapus.', 'danger');
+            }
+        } else {
+            Flasher::setFlash('Gagal!', 'Tidak ada data yang dipilih untuk dihapus.', 'danger');
+        }
+        header('Location: ' . BASEURL . '/admin/kelas/guru');
+        exit;
+    }
+    
     public function view($view, $data = []) {
         extract($data);
         require_once '../app/views/layouts/admin_header.php';
         require_once '../app/views/' . $view . '.php';
         require_once '../app/views/layouts/admin_footer.php';
     }
+
+    /**
+     * ==========================================================
+     * METODE BARU: Untuk menangani upload dan proses file import siswa.
+     * ==========================================================
+     */
+    public function importSiswa() {
+        $this->checkAuth();
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['file_import_siswa']) && isset($_POST['kelas_id'])) {
+            $kelas_id = $_POST['kelas_id'];
+            $file = $_FILES['file_import_siswa'];
+
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                Flasher::setFlash('Gagal!', 'Terjadi error saat mengunggah file.', 'danger');
+                header('Location: ' . BASEURL . '/admin/detailKelas/' . $kelas_id);
+                exit;
+            }
+
+            $fileType = pathinfo($file['name'], PATHINFO_EXTENSION);
+            if (strtolower($fileType) != 'csv') {
+                Flasher::setFlash('Gagal!', 'Hanya file format .csv yang didukung.', 'danger');
+                header('Location: ' . BASEURL . '/admin/detailKelas/' . $kelas_id);
+                exit;
+            }
+
+            $fileHandle = fopen($file['tmp_name'], 'r');
+            fgetcsv($fileHandle); // Lewati baris header
+
+            $dataUntukImport = [];
+            while (($row = fgetcsv($fileHandle)) !== FALSE) {
+                if (!empty($row[0]) && !empty($row[1])) { // Pastikan nama dan ID siswa tidak kosong
+                    $dataUntukImport[] = [
+                        'nama'          => trim($row[0]),
+                        'id_siswa'      => trim($row[1]),
+                        'jenis_kelamin' => trim($row[2] ?? 'Laki laki'),
+                    ];
+                }
+            }
+            fclose($fileHandle);
+            
+            if (!empty($dataUntukImport)) {
+                $siswaModel = new Siswa_model();
+                $hasil = $siswaModel->importSiswaBatch($dataUntukImport, $kelas_id);
+
+                if ($hasil['failed'] > 0) {
+                    $pesan = "{$hasil['success']} data berhasil diimpor, {$hasil['failed']} data gagal. <br> Detail Error: <br>" . implode('<br>', $hasil['errors']);
+                    Flasher::setFlash('Proses Selesai dengan Error', $pesan, 'danger');
+                } else {
+                    Flasher::setFlash('Berhasil!', "{$hasil['success']} data siswa berhasil diimpor.", 'success');
+                }
+            } else {
+                Flasher::setFlash('Gagal!', 'File CSV kosong atau formatnya salah.', 'danger');
+            }
+        } else {
+            Flasher::setFlash('Gagal!', 'Tidak ada file yang diunggah atau ID kelas tidak ditemukan.', 'danger');
+        }
+
+        header('Location: ' . BASEURL . '/admin/detailKelas/' . $_POST['kelas_id']);
+        exit;
+    }
+
+    /**
+     * ==========================================================
+     * METODE BARU: Untuk menangani penghapusan banyak siswa.
+     * ==========================================================
+     */
+    public function hapusSiswaMassal() {
+        $this->checkAuth();
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && !empty($_POST['ids']) && isset($_POST['kelas_id'])) {
+            $ids = $_POST['ids'];
+            $kelas_id = $_POST['kelas_id'];
+            $siswaModel = new Siswa_model();
+            $rowCount = $siswaModel->hapusSiswaMassal($ids);
+
+            if ($rowCount > 0) {
+                Flasher::setFlash('Berhasil!', "{$rowCount} data siswa berhasil dihapus.", 'success');
+            } else {
+                Flasher::setFlash('Gagal!', 'Tidak ada data siswa yang dihapus.', 'danger');
+            }
+            header('Location: ' . BASEURL . '/admin/detailKelas/' . $kelas_id);
+        } else {
+            Flasher::setFlash('Gagal!', 'Tidak ada data yang dipilih atau ID kelas tidak ditemukan.', 'danger');
+            // Redirect ke halaman kelas jika kelas_id tidak ada
+            header('Location: ' . BASEURL . '/admin/kelas');
+        }
+        exit;
+    }
 }
+

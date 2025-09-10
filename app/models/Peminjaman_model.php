@@ -8,8 +8,116 @@ class Peminjaman_model {
         $this->db = new Database;
     }
 
+    /**
+     * Mengambil satu data peminjaman berdasarkan ID-nya.
+     */
+    public function getPeminjamanById($id) {
+        $this->db->query("SELECT * FROM {$this->table} WHERE id = :id");
+        $this->db->bind('id', $id);
+        return $this->db->single();
+    }
+
+    /**
+     * Memperbarui status peminjaman (misal: 'Disetujui', 'Ditolak', 'Dikembalikan').
+     */
+    public function updateStatusPeminjaman($id, $status) {
+        $query = "UPDATE {$this->table} SET status = :status WHERE id = :id";
+        $this->db->query($query);
+        $this->db->bind('id', $id);
+        $this->db->bind('status', $status);
+        $this->db->execute();
+        return $this->db->rowCount();
+    }
+
+    /**
+     * Membuat beberapa record peminjaman sekaligus dalam satu transaksi yang aman.
+     * Logika pengurangan stok juga dimasukkan di sini untuk menjamin integritas data.
+     */
+    public function createPeminjamanBatch($dataPeminjaman) {
+        if (empty($dataPeminjaman)) {
+            return 0;
+        }
+
+        $this->db->beginTransaction();
+
+        try {
+            $peminjamanQuery = "INSERT INTO " . $this->table . " (user_id, barang_id, tanggal_pinjam, tanggal_kembali_diajukan, status, keperluan, verifikator_id) VALUES (:user_id, :barang_id, :tanggal_pinjam, :tanggal_kembali_diajukan, :status, :keperluan, :verifikator_id)";
+            $stokQuery = "UPDATE barang SET jumlah = jumlah - 1 WHERE id = :barang_id AND jumlah > 0";
+
+            foreach ($dataPeminjaman as $peminjaman) {
+                // 1. Kurangi stok barang
+                $this->db->query($stokQuery);
+                $this->db->bind('barang_id', $peminjaman['barang_id']);
+                $this->db->execute();
+                
+                if ($this->db->rowCount() == 0) {
+                    throw new Exception("Stok untuk barang ID {$peminjaman['barang_id']} habis atau tidak ditemukan.");
+                }
+
+                // 2. Simpan data peminjaman
+                $this->db->query($peminjamanQuery); // PERBAIKAN PENTING: Memanggil ulang query() untuk statement INSERT
+                $this->db->bind('user_id', $peminjaman['user_id']);
+                $this->db->bind('barang_id', $peminjaman['barang_id']);
+                $this->db->bind('tanggal_pinjam', $peminjaman['tanggal_pinjam']);
+                $this->db->bind('tanggal_kembali_diajukan', $peminjaman['tanggal_kembali_diajukan']);
+                $this->db->bind('status', 'Menunggu Verifikasi');
+                $this->db->bind('keperluan', $peminjaman['keperluan']);
+                $this->db->bind('verifikator_id', $peminjaman['verifikator_id']);
+                $this->db->execute();
+            }
+
+            $this->db->commit();
+            return count($dataPeminjaman);
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            // error_log($e->getMessage()); // Bisa diaktifkan untuk debugging di server
+            return 0;
+        }
+    }
+
+    /**
+     * Mengambil data peminjaman yang perlu diverifikasi oleh guru spesifik.
+     */
+    public function getPeminjamanForVerification($verifikator_id) {
+        $query = "SELECT p.*, s.nama as nama_siswa, s.id_siswa, b.nama_barang 
+                  FROM " . $this->table . " p 
+                  JOIN siswa s ON p.user_id = s.user_id 
+                  JOIN barang b ON p.barang_id = b.id
+                  WHERE p.verifikator_id = :verifikator_id AND p.status = 'Menunggu Verifikasi'
+                  ORDER BY p.tanggal_pinjam ASC";
+        
+        $this->db->query($query);
+        $this->db->bind('verifikator_id', $verifikator_id);
+        return $this->db->resultSet();
+    }
+    
+    /**
+     * Mengambil riwayat peminjaman untuk satu siswa (dengan paginasi).
+     */
+    public function getHistoryByUserId($userId, $offset, $limit) {
+        $query = "SELECT p.*, b.nama_barang FROM {$this->table} p JOIN barang b ON p.barang_id = b.id WHERE p.user_id = :user_id ORDER BY p.tanggal_pinjam DESC LIMIT :offset, :limit";
+        $this->db->query($query);
+        $this->db->bind('user_id', $userId);
+        $this->db->bind('offset', $offset, PDO::PARAM_INT);
+        $this->db->bind('limit', $limit, PDO::PARAM_INT);
+        return $this->db->resultSet();
+    }
+    
+    /**
+     * Menghitung total riwayat peminjaman untuk satu siswa.
+     */
+    public function countHistoryByUserId($userId) {
+        $query = "SELECT COUNT(id) as total FROM {$this->table} WHERE user_id = :user_id";
+        $this->db->query($query);
+        $this->db->bind('user_id', $userId);
+        $result = $this->db->single();
+        return $result['total'] ?? 0;
+    }
+
+    /**
+     * Mengambil semua riwayat peminjaman (untuk Laporan Admin).
+     */
     public function getHistoryPaginated($offset, $limit, $filters = []) {
-        // ✅ PERBAIKAN: Mengganti u.id_pengguna dengan statement CASE dan JOIN
         $sql = "SELECT 
                     p.id, 
                     u.username as nama_peminjam,
@@ -61,8 +169,10 @@ class Peminjaman_model {
         return $this->db->resultSet();
     }
     
+    /**
+     * Menghitung semua riwayat peminjaman (untuk Laporan Admin).
+     */
     public function countAllHistory($filters = []) {
-        // ✅ PERBAIKAN: Mengganti u.id_pengguna dengan statement CASE dan JOIN
         $sql = "SELECT COUNT(p.id) as total
                 FROM {$this->table} p
                 JOIN users u ON p.user_id = u.id
@@ -100,11 +210,9 @@ class Peminjaman_model {
     }
 
     /**
-     * ✅ FUNGSI BARU: Mengambil semua data riwayat untuk di-ekspor ke CSV.
-     * Tidak ada LIMIT/OFFSET di sini.
+     * Mengambil semua riwayat untuk diekspor ke CSV.
      */
     public function getAllHistoryForExport($filters = []) {
-        // ✅ PERBAIKAN: Mengganti u.id_pengguna dengan statement CASE dan JOIN
         $sql = "SELECT 
                     p.id, 
                     u.username as nama_peminjam, 
@@ -153,3 +261,4 @@ class Peminjaman_model {
         return $this->db->resultSet();
     }
 }
+
