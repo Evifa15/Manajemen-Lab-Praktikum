@@ -1,8 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
-    
-// ======================================
-    // FUNGSI UMUM & NAVIGASI
-    // ======================================
+
+    console.log('admin-script.js dimuat.');
+
+    /**
+     * =================================================================
+     * FUNGSI-FUNGSI BANTUAN UMUM (GLOBAL HELPER FUNCTIONS)
+     * =================================================================
+     */
     function setActiveLink(navPrefix, navLinksConfig) {
         const currentPath = window.location.pathname;
         for (const key in navLinksConfig) {
@@ -13,520 +17,293 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    const adminNavs = { 'dashboard': 'nav-dashboard', 'pengguna': 'nav-pengguna', 'barang': 'nav-barang', 'kelas': 'nav-kelas', 'laporan': 'nav-laporan', 'profile': 'nav-profile' };
-    const guruNavs = { 'dashboard': 'nav-dashboard-guru', 'verifikasi': 'nav-verifikasi-guru', 'siswa': 'nav-siswa-guru', 'riwayat': 'nav-riwayat-guru', 'profile': 'nav-profile-guru' };
-    const siswaNavs = { 'dashboard': 'nav-dashboard-siswa', 'katalog': 'nav-katalog-siswa', 'pengembalian': 'nav-pengembalian-siswa', 'riwayat': 'nav-riwayat-siswa' };
-    setActiveLink('admin', adminNavs);
-    setActiveLink('guru', guruNavs);
-    setActiveLink('siswa', siswaNavs);
-    
-    const universalDeleteModal = document.getElementById('deleteModal');
-    if (universalDeleteModal) {
-        const cancelBtn = universalDeleteModal.querySelector('#cancelDeleteBtn, #cancelDelete');
-        const closeBtn = universalDeleteModal.querySelector('.close-button');
-        const closeModal = () => { universalDeleteModal.classList.remove('active'); };
-        if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+    function setupModal(modalId, openBtnId, formConfig = null) {
+        const modal = document.getElementById(modalId);
+        const openBtn = document.getElementById(openBtnId);
+        if (!modal || !openBtn) return;
+        const closeBtn = modal.querySelector('.close-button');
+        openBtn.addEventListener('click', () => {
+            console.log(`DEBUG: Tombol Buka Modal ${modalId} diklik.`);
+            if (formConfig && formConfig.formId) {
+                const form = document.getElementById(formConfig.formId);
+                const modalTitle = modal.querySelector('h3');
+                if (form) {
+                    form.reset();
+                    form.action = `${BASEURL}${formConfig.actionUrl}`;
+                    if (modalTitle && formConfig.title) {
+                        modalTitle.textContent = formConfig.title;
+                    }
+                    if(form.querySelector('#fotoLama')) {
+                        form.querySelector('#fotoLama').value = 'default.png';
+                    }
+                }
+            }
+            modal.classList.add('active');
+        });
+        const closeModal = () => modal.classList.remove('active');
         if (closeBtn) closeBtn.addEventListener('click', closeModal);
-        window.addEventListener('click', (e) => { if (e.target === universalDeleteModal) closeModal(); });
-    }
-
-    // ======================================
-    // FUNGSI LIVE SEARCH DENGAN DEBOUNCE
-    // ======================================
-    function setupLiveSearch(inputId, formId) {
-        const searchInput = document.getElementById(inputId);
-        const searchForm = document.getElementById(formId);
-
-        if (!searchInput || !searchForm) return;
-
-        let debounceTimer;
-        searchInput.addEventListener('keyup', (e) => {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
-                searchForm.submit();
-            }, 500); // Tunggu 500ms setelah user berhenti mengetik
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
         });
     }
 
-    // ======================================
-    // FUNGSI HAPUS MASSAL (BULK DELETE)
-    // ======================================
     function setupBulkDelete(formId, selectAllId, rowCheckboxClass, bulkDeleteBtnId) {
         const form = document.getElementById(formId);
         if (!form) return;
-
         const selectAllCheckbox = document.getElementById(selectAllId);
-        const rowCheckboxes = form.querySelectorAll(`.${rowCheckboxClass}`);
         const bulkDeleteBtn = document.getElementById(bulkDeleteBtnId);
-
-        if (!selectAllCheckbox || !bulkDeleteBtn || rowCheckboxes.length === 0) return;
+        if (!selectAllCheckbox || !bulkDeleteBtn) return;
 
         function toggleBulkDeleteBtn() {
-            const checkedCheckboxes = form.querySelectorAll(`.${rowCheckboxClass}:checked`);
-            bulkDeleteBtn.style.display = (checkedCheckboxes.length > 0) ? 'inline-block' : 'none';
+            const anyChecked = form.querySelector(`.${rowCheckboxClass}:checked`);
+            bulkDeleteBtn.style.display = anyChecked ? 'inline-block' : 'none';
         }
 
-        selectAllCheckbox.addEventListener('change', function() {
-            rowCheckboxes.forEach(checkbox => checkbox.checked = this.checked);
-            toggleBulkDeleteBtn();
-        });
-
-        rowCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', () => {
+        form.addEventListener('change', function(event) {
+            const target = event.target;
+            if (target.id === selectAllId) {
+                const rowCheckboxes = form.querySelectorAll(`.${rowCheckboxClass}`);
+                rowCheckboxes.forEach(checkbox => {
+                    checkbox.checked = target.checked;
+                });
+            }
+            if (target.classList.contains(rowCheckboxClass)) {
+                const totalCheckboxes = form.querySelectorAll(`.${rowCheckboxClass}`).length;
                 const totalChecked = form.querySelectorAll(`.${rowCheckboxClass}:checked`).length;
-                selectAllCheckbox.checked = totalChecked === rowCheckboxes.length;
-                toggleBulkDeleteBtn();
-            });
+                selectAllCheckbox.checked = (totalCheckboxes > 0 && totalCheckboxes === totalChecked);
+            }
+            toggleBulkDeleteBtn();
         });
         
         bulkDeleteBtn.addEventListener('click', function(e) {
-            e.preventDefault(); 
-            const checkedCheckboxes = form.querySelectorAll(`.${rowCheckboxClass}:checked`);
-            if (checkedCheckboxes.length === 0) {
-                alert('Pilih setidaknya satu data untuk dihapus.');
-                return;
-            }
-            if (confirm('Apakah Anda yakin ingin menghapus semua data yang dipilih?')) {
+            e.preventDefault();
+            const deleteModal = document.getElementById('deleteModal');
+            const confirmDeleteBtn = deleteModal.querySelector('#confirmDelete');
+            deleteModal.classList.add('active');
+            const handleConfirm = function() {
                 form.submit();
-            }
+            };
+            confirmDeleteBtn.addEventListener('click', handleConfirm, { once: true });
         });
     }
 
+    /**
+     * =================================================================
+     * FUNGSI PENGATURAN UNTUK TIAP TAB PENGGUNA
+     * =================================================================
+     */
 
-    // ======================================
-    // LOGIKA SPESIFIK UNTUK SETIAP HALAMAN
-    // ======================================
+    function setupStaffTab() {
+        setupModal('staffModal', 'addStaffBtn', { formId: 'staffForm', actionUrl: '/admin/tambah-staff', title: 'Tambah Staff' });
+        setupModal('importStaffModal', 'importStaffBtn');
+        setupBulkDelete('bulkDeleteStaffForm', 'selectAllStaff', 'row-checkbox-staff', 'bulkDeleteStaffBtn');
 
-    // Logika untuk Halaman Manajemen Pengguna
-    function setupUserPage() {
-        const userModal = document.getElementById('userModal');
-        const userForm = document.getElementById('userForm');
-        const confirmDeleteLink = document.getElementById('confirmDelete');
+        const staffTableBody = document.getElementById('staffTableBody');
+        const deleteModal = document.getElementById('deleteModal');
+        const staffModal = document.getElementById('staffModal');
 
-        const addUserBtn = document.getElementById('addUserBtn');
-        if (addUserBtn) {
-            addUserBtn.addEventListener('click', () => {
-                if (userForm) {
-                    userForm.reset();
-                    userForm.action = `${BASEURL}/admin/tambah-pengguna`;
-                    userForm.querySelector('#password').required = true;
+        if (staffTableBody) {
+            staffTableBody.addEventListener('click', function(event) {
+                const target = event.target;
+                const deleteButton = target.closest('.delete-staff-btn');
+                const editButton = target.closest('.edit-staff-btn');
+                if (deleteButton) {
+                    const confirmDeleteLink = deleteModal.querySelector('#confirmDelete');
+                    confirmDeleteLink.href = `${BASEURL}/admin/hapus-staff/${deleteButton.dataset.id}`;
+                    deleteModal.classList.add('active');
                 }
-                if (userModal) {
-                    userModal.querySelector('h3.modal-title').textContent = 'Tambah Pengguna';
-                    userModal.classList.add('active');
-                }
-            });
-        }
-
-        document.querySelectorAll('#userTable .edit-btn').forEach(button => {
-            button.addEventListener('click', (event) => {
-                const userId = button.dataset.id;
-                fetch(`${BASEURL}/admin/get-pengguna-detail-by-id/${userId}`)
-                    .then(res => res.json())
-                    .then(user => {
-                        if (userForm) {
-                            userForm.reset();
-                            userForm.action = `${BASEURL}/admin/ubah-pengguna`;
-                            userForm.querySelector('#userId').value = user.id;
-                            userForm.querySelector('#username').value = user.username;
-                            userForm.querySelector('#id_pengguna').value = user.id_pengguna;
-                            userForm.querySelector('#email').value = user.email;
-                            userForm.querySelector('#role').value = user.role;
-                            userForm.querySelector('#password').required = false;
-                            userForm.querySelector('#password').placeholder = 'Kosongkan jika tidak ingin diubah';
-                        }
-                        if (userModal) {
-                            userModal.querySelector('h3.modal-title').textContent = 'Ubah Pengguna';
-                            userModal.classList.add('active');
-                        }
-                    });
-            });
-        });
-
-        document.querySelectorAll('#userTable .delete-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                if (confirmDeleteLink) {
-                    confirmDeleteLink.href = `${BASEURL}/admin/hapus-pengguna/${button.dataset.id}`;
-                }
-                document.getElementById('deleteModal').classList.add('active');
-            });
-        });
-
-        if (userModal) {
-            userModal.querySelector('.close-button').addEventListener('click', () => userModal.classList.remove('active'));
-            window.addEventListener('click', (e) => { if (e.target === userModal) userModal.classList.remove('active'); });
-        }
-    }
-
-    // Logika untuk Halaman Manajemen Barang
-    function setupItemPage() {
-        const addItemBtn = document.getElementById('addItemBtn');
-        if (addItemBtn) {
-            addItemBtn.addEventListener('click', () => {
-                const itemModal = document.getElementById('itemModal');
-                const itemForm = document.getElementById('itemForm');
-                
-                if (itemForm) {
-                    itemForm.reset();
-                    itemForm.action = `${BASEURL}/admin/tambah-barang`; 
-                }
-                if (itemModal) {
-                    const formTitle = itemModal.querySelector('h3.modal-title');
-                    if (formTitle) formTitle.textContent = 'Tambah Barang';
-                    itemModal.classList.add('active');
-                }
-            });
-        }
-        
-        document.querySelectorAll('#itemTable .edit-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                const itemId = button.dataset.id;
-                const itemModal = document.getElementById('itemModal');
-                const itemForm = document.getElementById('itemForm');
-
-                fetch(`${BASEURL}/admin/get-barang-by-id/${itemId}`)
-                    .then(res => res.json())
-                    .then(item => {
-                        if (itemForm) {
-                            itemForm.reset();
-                            itemForm.action = `${BASEURL}/admin/ubah-barang`;
-                            itemForm.querySelector('#itemId').value = item.id;
-                            itemForm.querySelector('#gambarLama').value = item.gambar;
-                            itemForm.querySelector('#kode_barang').value = item.kode_barang;
-                            itemForm.querySelector('#nama_barang').value = item.nama_barang;
-                            itemForm.querySelector('#jumlah').value = item.jumlah;
-                            itemForm.querySelector('#kondisi').value = item.kondisi;
-                            itemForm.querySelector('#tanggal_pembelian').value = item.tanggal_pembelian;
-                            itemForm.querySelector('#lokasi_penyimpanan').value = item.lokasi_penyimpanan;
-                        }
-                        if (itemModal) {
-                            const formTitle = itemModal.querySelector('h3.modal-title');
-                            if (formTitle) formTitle.textContent = 'Ubah Barang';
-                            itemModal.classList.add('active');
-                        }
-                    });
-            });
-        });
-        
-        const confirmDeleteLink = document.getElementById('confirmDeleteLink');
-        document.querySelectorAll('#itemTable .delete-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                if (confirmDeleteLink) {
-                    confirmDeleteLink.href = `${BASEURL}/admin/hapus-barang/${button.dataset.id}`;
-                }
-                document.getElementById('deleteModal').classList.add('active');
-            });
-        });
-
-        document.querySelectorAll('#itemTable .view-btn').forEach(button => {
-            button.addEventListener('click', () => window.location.href = `${BASEURL}/admin/barang/detail/${button.dataset.id}`);
-        });
-
-        const itemModal = document.getElementById('itemModal');
-        if (itemModal) {
-            const closeButton = itemModal.querySelector('.close-button');
-            if (closeButton) {
-                closeButton.addEventListener('click', () => itemModal.classList.remove('active'));
-            }
-            window.addEventListener('click', (e) => {
-                if (e.target === itemModal) itemModal.classList.remove('active');
-            });
-        }
-    }
-    
-    // Logika untuk Halaman Manajemen Kelas & Guru
-    function setupKelasGuruPage() {
-        const confirmDelete = document.getElementById('confirmDelete');
-
-        // Modal Tambah/Edit Kelas
-        const kelasModal = document.getElementById('kelasModal');
-        if (kelasModal) {
-            const addKelasBtn = document.getElementById('addKelasBtn');
-            if (addKelasBtn) {
-                addKelasBtn.addEventListener('click', () => {
-                    const kelasForm = document.getElementById('kelasForm');
-                    if (kelasForm) {
-                        kelasForm.reset();
-                        kelasForm.action = `${BASEURL}/admin/tambah-kelas`;
-                    }
-                    const kelasModalTitle = document.getElementById('kelasModalTitle');
-                    if(kelasModalTitle) kelasModalTitle.textContent = 'Tambah Kelas';
-                    kelasModal.classList.add('active');
-                });
-            }
-            
-            document.querySelectorAll('.edit-kelas-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const id = btn.dataset.id;
-                    fetch(`${BASEURL}/admin/get-kelas-by-id/${id}`)
-                        .then(res => res.json())
+                if (editButton) {
+                    const staffForm = document.getElementById('staffForm');
+                    const staffModalTitle = staffModal.querySelector('h3');
+                    staffModalTitle.textContent = 'Ubah Data Staff';
+                    staffForm.action = `${BASEURL}/admin/ubah-staff`;
+                    fetch(`${BASEURL}/admin/get-staff-by-id/${editButton.dataset.id}`)
+                        .then(response => response.json())
                         .then(data => {
-                            if (document.getElementById('kelasForm')) {
-                                document.getElementById('kelasForm').action = `${BASEURL}/admin/ubah-kelas`;
-                                document.getElementById('kelasId').value = data.id;
-                                document.getElementById('nama_kelas').value = data.nama_kelas;
-                                document.getElementById('wali_kelas_id').value = data.wali_kelas_id;
-                            }
-                            if (kelasModal) {
-                                document.getElementById('kelasModalTitle').textContent = 'Ubah Kelas';
-                                kelasModal.classList.add('active');
-                            }
+                            staffForm.querySelector('#staffId').value = data.id;
+                            staffForm.querySelector('#nama').value = data.nama;
+                            staffForm.querySelector('#id_staff').value = data.id_staff;
+                            staffForm.querySelector('#jenis_kelamin_staff').value = data.jenis_kelamin;
+                            staffForm.querySelector('#ttl_staff').value = data.ttl;
+                            staffForm.querySelector('#agama_staff').value = data.agama;
+                            staffForm.querySelector('#no_hp_staff').value = data.no_hp;
+                            staffForm.querySelector('#alamat_staff').value = data.alamat;
+                            staffForm.querySelector('#email_staff').value = data.email;
+                            staffModal.classList.add('active');
                         });
-                });
-            });
-
-            document.querySelectorAll('.delete-kelas-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    if (confirmDelete) {
-                        confirmDelete.href = `${BASEURL}/admin/hapus-kelas/${btn.dataset.id}`;
-                    }
-                    document.getElementById('deleteModal').classList.add('active');
-                });
-            });
-            
-            if (kelasModal.querySelector('.close-button')) {
-                kelasModal.querySelector('.close-button').addEventListener('click', () => kelasModal.classList.remove('active'));
-            }
-            window.addEventListener('click', (e) => {
-                if (e.target === kelasModal) kelasModal.classList.remove('active');
-            });
-        }
-        
-        // Modal Import Kelas
-        const importModal = document.getElementById('importModal');
-        if (importModal) {
-            const importKelasBtn = document.getElementById('importKelasBtn');
-            if (importKelasBtn) {
-                importKelasBtn.addEventListener('click', () => {
-                    const importForm = document.getElementById('importForm');
-                    if (importForm) importForm.reset();
-                    importModal.classList.add('active');
-                });
-            }
-            if (importModal.querySelector('.close-button')) {
-                importModal.querySelector('.close-button').addEventListener('click', () => importModal.classList.remove('active'));
-            }
-            window.addEventListener('click', (e) => {
-                if (e.target === importModal) importModal.classList.remove('active');
-            });
-        }
-
-        // Modal Tambah/Edit Guru
-        const guruModal = document.getElementById('guruModal');
-        if (guruModal) {
-            const addGuruBtn = document.getElementById('addGuruBtn');
-            if (addGuruBtn) {
-                addGuruBtn.addEventListener('click', () => {
-                    const guruForm = document.getElementById('guruForm');
-                    if (guruForm) {
-                        guruForm.reset();
-                        guruForm.action = `${BASEURL}/admin/tambah-guru`;
-                    }
-                    const guruModalTitle = document.getElementById('guruModalTitle');
-                    if(guruModalTitle) guruModalTitle.textContent = 'Tambah Guru';
-                    guruModal.classList.add('active');
-                });
-            }
-        
-            document.querySelectorAll('.edit-guru-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const id = btn.dataset.id;
-                    fetch(`${BASEURL}/admin/get-guru-by-id/${id}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            if (document.getElementById('guruForm')) {
-                                document.getElementById('guruForm').action = `${BASEURL}/admin/ubah-guru`;
-                                document.getElementById('guruId').value = data.id;
-                                document.getElementById('nama').value = data.nama;
-                                document.getElementById('nip').value = data.nip;
-                                document.getElementById('jenis_kelamin').value = data.jenis_kelamin;
-                                document.getElementById('ttl').value = data.ttl;
-                                document.getElementById('agama').value = data.agama;
-                                document.getElementById('alamat').value = data.alamat;
-                                document.getElementById('no_hp').value = data.no_hp;
-                                document.getElementById('email').value = data.email;
-                            }
-                            if (guruModal) {
-                                document.getElementById('guruModalTitle').textContent = 'Ubah Guru';
-                                guruModal.classList.add('active');
-                            }
-                        });
-                });
-            });
-
-            document.querySelectorAll('.delete-guru-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    if (confirmDelete) {
-                        confirmDelete.href = `${BASEURL}/admin/hapus-guru/${btn.dataset.id}`;
-                    }
-                    document.getElementById('deleteModal').classList.add('active');
-                });
-            });
-
-            if (guruModal.querySelector('.close-button')) {
-                guruModal.querySelector('.close-button').addEventListener('click', () => guruModal.classList.remove('active'));
-            }
-            window.addEventListener('click', (e) => {
-                if (e.target === guruModal) guruModal.classList.remove('active');
-            });
-        }
-
-        // Modal Import Guru
-        const importGuruModal = document.getElementById('importGuruModal');
-        if (importGuruModal) {
-            const importGuruBtn = document.getElementById('importGuruBtn');
-            if (importGuruBtn) {
-                importGuruBtn.addEventListener('click', () => {
-                    const importGuruForm = document.getElementById('importGuruForm');
-                    if (importGuruForm) importGuruForm.reset();
-                    importGuruModal.classList.add('active');
-                });
-            }
-            if (importGuruModal.querySelector('.close-button')) {
-                importGuruModal.querySelector('.close-button').addEventListener('click', () => importGuruModal.classList.remove('active'));
-            }
-            window.addEventListener('click', (e) => {
-                if (e.target === importGuruModal) importGuruModal.classList.remove('active');
-            });
-        }
-    }
-
-    // Logika untuk Halaman Detail Kelas
-    function setupDetailKelasPage() {
-        const siswaModal = document.getElementById('siswaModal');
-        const siswaForm = document.getElementById('siswaForm');
-        
-        const addSiswaBtn = document.getElementById('addSiswaBtn');
-        if (addSiswaBtn) {
-            addSiswaBtn.addEventListener('click', () => {
-                if (siswaForm) {
-                    siswaForm.reset();
-                    siswaForm.action = `${BASEURL}/admin/tambah-siswa`;
-                }
-                if (siswaModal) {
-                    siswaModal.querySelector('h3.modal-title').textContent = 'Tambah Siswa';
-                    siswaModal.classList.add('active');
                 }
             });
         }
-    
-        document.querySelectorAll('.edit-siswa-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                const siswaId = button.dataset.id;
-                fetch(`${BASEURL}/admin/get-siswa-by-id/${siswaId}`)
-                    .then(res => res.json())
-                    .then(siswa => {
-                        if (siswaForm) {
-                            siswaForm.reset();
-                            siswaForm.action = `${BASEURL}/admin/ubah-siswa`;
-                            siswaForm.querySelector('#siswaId').value = siswa.id;
-                            siswaForm.querySelector('#id_siswa').value = siswa.id_siswa;
-                            siswaForm.querySelector('#nama').value = siswa.nama;
-                            siswaForm.querySelector('#jenis_kelamin').value = siswa.jenis_kelamin;
-                            siswaForm.querySelector('#status').value = siswa.status;
-                            siswaForm.querySelector('#ttl').value = siswa.ttl;
-                            siswaForm.querySelector('#agama').value = siswa.agama;
-                            siswaForm.querySelector('#alamat').value = siswa.alamat;
-                            siswaForm.querySelector('#no_hp').value = siswa.no_hp;
-                            siswaForm.querySelector('#email').value = siswa.email;
-                            siswaForm.querySelector('#kelas_id').value = siswa.kelas_id;
-                        }
-                        if (siswaModal) {
-                            siswaModal.querySelector('h3.modal-title').textContent = 'Ubah Siswa';
-                            siswaModal.classList.add('active');
-                        }
-                    });
-            });
-        });
-        
-        const confirmDelete = document.getElementById('confirmDelete');
-        document.querySelectorAll('.delete-siswa-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                const siswaId = button.dataset.id;
-                const kelasId = document.getElementById('kelas_id').value;
-                if (confirmDelete) {
-                    confirmDelete.href = `${BASEURL}/admin/hapus-siswa/${siswaId}/${kelasId}`;
-                }
-                document.getElementById('deleteModal').classList.add('active');
-            });
-        });
-
-        if(siswaModal){
-            if (siswaModal.querySelector('.close-button')) {
-                 siswaModal.querySelector('.close-button').addEventListener('click', () => siswaModal.classList.remove('active'));
-            }
-            window.addEventListener('click', (e) => {
-                if (e.target === siswaModal) siswaModal.classList.remove('active');
-            });
-        }
-
-        const importSiswaModal = document.getElementById('importSiswaModal');
-        if (importSiswaModal) {
-            const importSiswaBtn = document.getElementById('importSiswaBtn');
-            if (importSiswaBtn) {
-                importSiswaBtn.addEventListener('click', () => {
-                    const importForm = document.getElementById('importSiswaForm');
-                    if (importForm) importForm.reset();
-                    importSiswaModal.classList.add('active');
-                });
-            }
-            if (importSiswaModal.querySelector('.close-button')) {
-                importSiswaModal.querySelector('.close-button').addEventListener('click', () => importSiswaModal.classList.remove('active'));
-            }
-            window.addEventListener('click', (e) => {
-                if (e.target === importSiswaModal) importSiswaModal.classList.remove('active');
-            });
-        }
     }
 
-    // Logika untuk Halaman Laporan & Riwayat
-    function setupLaporanPage() {
-        const buktiModal = document.getElementById('buktiModal');
-        if (buktiModal) {
-            document.querySelectorAll('.view-bukti-btn').forEach(button => {
-                button.addEventListener('click', () => {
-                    const imageUrl = button.dataset.imgUrl;
-                    document.getElementById('buktiModalImg').src = imageUrl;
-                    buktiModal.classList.add('active');
-                });
-            });
-
-            const closeButton = buktiModal.querySelector('.close-button');
-            if (closeButton) {
-                closeButton.addEventListener('click', () => buktiModal.classList.remove('active'));
-            }
-            window.addEventListener('click', (e) => {
-                if (e.target === buktiModal) buktiModal.classList.remove('active');
-            });
-        }
-    }
-
-
-    // ======================================
-    // PANGGIL FUNGSI BERDASARKAN HALAMAN
-    // ======================================
-    if (document.getElementById('userTable')) {
-        setupUserPage();
-    }
-    if (document.getElementById('itemTable')) {
-        setupItemPage();
-    }
-    if (document.querySelector('.tab-links-wrapper')) {
-        setupKelasGuruPage();
-        setupBulkDelete('bulkDeleteKelasForm', 'selectAllKelas', 'row-checkbox-kelas', 'bulkDeleteKelasBtn');
+    function setupGuruTab() {
+        setupModal('guruModal', 'addGuruBtn', { formId: 'guruForm', actionUrl: '/admin/tambah-guru', title: 'Tambah Guru' });
+        setupModal('importGuruModal', 'importGuruBtn');
         setupBulkDelete('bulkDeleteGuruForm', 'selectAllGuru', 'row-checkbox-guru', 'bulkDeleteGuruBtn');
-        // PEMANGGILAN FUNGSI LIVE SEARCH
-        setupLiveSearch('searchKelasInput', 'searchKelasForm');
-        setupLiveSearch('searchGuruInput', 'searchGuruForm');
+        
+        const guruTableBody = document.getElementById('guruTableBody');
+        const deleteModal = document.getElementById('deleteModal');
+        const guruModal = document.getElementById('guruModal');
+
+        if (guruTableBody) {
+            guruTableBody.addEventListener('click', function(event) {
+                const target = event.target;
+                const deleteButton = target.closest('.delete-guru-btn');
+                const editButton = target.closest('.edit-guru-btn');
+                if (deleteButton) {
+                    const confirmDeleteLink = deleteModal.querySelector('#confirmDelete');
+                    confirmDeleteLink.href = `${BASEURL}/admin/hapus-guru/${deleteButton.dataset.id}`;
+                    deleteModal.classList.add('active');
+                }
+                if (editButton) {
+                    const guruForm = document.getElementById('guruForm');
+                    const guruModalTitle = guruModal.querySelector('h3');
+                    guruModalTitle.textContent = 'Ubah Data Guru';
+                    guruForm.action = `${BASEURL}/admin/ubah-guru`;
+                    fetch(`${BASEURL}/admin/get-guru-by-id/${editButton.dataset.id}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            guruForm.querySelector('#guruId').value = data.id;
+                            guruForm.querySelector('#nama_guru').value = data.nama;
+                            guruForm.querySelector('#nip_guru').value = data.nip;
+                            guruForm.querySelector('#jenis_kelamin_guru').value = data.jenis_kelamin;
+                            guruForm.querySelector('#ttl_guru').value = data.ttl;
+                            guruForm.querySelector('#agama_guru').value = data.agama;
+                            guruForm.querySelector('#no_hp_guru').value = data.no_hp;
+                            guruForm.querySelector('#alamat_guru').value = data.alamat;
+                            guruForm.querySelector('#email_guru').value = data.email;
+                            guruModal.classList.add('active');
+                        });
+                }
+            });
+        }
     }
-    if (document.querySelector('.manajemen-siswa-container')) {
-        setupDetailKelasPage();
+    
+    function setupSiswaTab() {
+        setupModal('siswaModal', 'addSiswaBtn', { formId: 'siswaForm', actionUrl: '/admin/tambah-siswa', title: 'Tambah Siswa' });
+        setupModal('importSiswaModal', 'importSiswaBtn');
         setupBulkDelete('bulkDeleteSiswaForm', 'selectAllSiswa', 'row-checkbox-siswa', 'bulkDeleteSiswaBtn');
-        // PEMANGGILAN FUNGSI LIVE SEARCH
-        setupLiveSearch('searchSiswaInput', 'searchSiswaForm');
+
+        const siswaTableBody = document.getElementById('siswaTableBody');
+        const deleteModal = document.getElementById('deleteModal');
+        const siswaModal = document.getElementById('siswaModal');
+        
+        if (siswaTableBody) {
+            siswaTableBody.addEventListener('click', function(event) {
+                const target = event.target;
+                const deleteButton = target.closest('.delete-siswa-btn');
+                const editButton = target.closest('.edit-siswa-btn');
+                
+                if (deleteButton) {
+                    const confirmDeleteLink = deleteModal.querySelector('#confirmDelete');
+                    confirmDeleteLink.href = `${BASEURL}/admin/hapus-siswa/${deleteButton.dataset.id}`;
+                    deleteModal.classList.add('active');
+                }
+
+                if (editButton) {
+                    const siswaForm = document.getElementById('siswaForm');
+                    const siswaModalTitle = siswaModal.querySelector('h3');
+                    siswaModalTitle.textContent = 'Ubah Data Siswa';
+                    siswaForm.action = `${BASEURL}/admin/ubah-siswa`;
+                    
+                    fetch(`${BASEURL}/admin/get-siswa-by-id/${editButton.dataset.id}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            siswaForm.querySelector('#siswaId').value = data.id;
+                            siswaForm.querySelector('#nama_siswa').value = data.nama;
+                            siswaForm.querySelector('#id_siswa').value = data.id_siswa;
+                            siswaForm.querySelector('#jenis_kelamin_siswa').value = data.jenis_kelamin;
+                            siswaForm.querySelector('#ttl_siswa').value = data.ttl;
+                            siswaForm.querySelector('#agama_siswa').value = data.agama;
+                            siswaForm.querySelector('#no_hp_siswa').value = data.no_hp;
+                            siswaForm.querySelector('#alamat_siswa').value = data.alamat;
+                            siswaForm.querySelector('#email_siswa').value = data.email;
+                            siswaForm.querySelector('#fotoLama').value = data.foto;
+                            siswaModal.classList.add('active');
+                        })
+                        .catch(error => {
+                            console.error('Error fetching student data:', error);
+                        });
+                }
+            });
+        }
     }
-    const laporanTable = document.querySelector('#laporan-table');
-    if (laporanTable) {
-        setupLaporanPage();
+    
+    function setupAkunTab() {
+        const akunTableBody = document.getElementById('akunTableBody');
+        const ubahPasswordModal = document.getElementById('ubahPasswordModal');
+        
+        if (akunTableBody) {
+             akunTableBody.addEventListener('click', function(event) {
+                const target = event.target;
+                const editButton = target.closest('.edit-akun-btn');
+                if (editButton) {
+                    const ubahPasswordForm = document.getElementById('ubahPasswordForm');
+                    const usernameAkun = document.getElementById('username-akun');
+
+                    ubahPasswordForm.querySelector('#akunId').value = editButton.dataset.id;
+                    ubahPasswordForm.querySelector('#password-baru').value = '';
+                    ubahPasswordForm.querySelector('#konfirmasi-password').value = '';
+                    usernameAkun.textContent = editButton.dataset.username;
+                    ubahPasswordModal.classList.add('active');
+                }
+            });
+        }
     }
+
+
+    /**
+     * =================================================================
+     * EKSEKUSI UTAMA (MAIN EXECUTION)
+     * =================================================================
+     */
+    
+    const currentPath = window.location.pathname;
+    const tabLinksWrapper = document.querySelector('.tab-links-wrapper');
+
+    if (tabLinksWrapper) {
+        if (currentPath.includes('/admin/pengguna/staff')) {
+            setupStaffTab();
+        } else if (currentPath.includes('/admin/pengguna/guru')) {
+            setupGuruTab();
+        } else if (currentPath.includes('/admin/pengguna/siswa')) {
+            setupSiswaTab();
+        } else if (currentPath.includes('/admin/pengguna/akun')) {
+            setupAkunTab();
+        }
+    }
+
+    const adminNavs = { 'dashboard': 'nav-dashboard', 'pengguna': 'nav-pengguna', 'barang': 'nav-barang', 'kelas': 'nav-kelas', 'laporan': 'nav-laporan', 'profile': 'nav-profile' };
+    setActiveLink('admin', adminNavs);
+
+    const deleteModal = document.getElementById('deleteModal');
+    if (deleteModal) {
+        const closeModal = () => deleteModal.classList.remove('active');
+        const cancelBtn = deleteModal.querySelector('#cancelDelete');
+        const closeBtn = deleteModal.querySelector('.close-button');
+        if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+        if (closeBtn) closeBtn.addEventListener('click', closeModal);
+        window.addEventListener('click', (event) => {
+            if (event.target === deleteModal) closeModal();
+        });
+    }
+
+    function setupStandardSearch(formId) {
+        const searchForm = document.getElementById(formId);
+        if (searchForm) {
+            searchForm.addEventListener('submit', () => {
+            });
+        }
+    }
+    
+    setupStandardSearch('searchStaffForm');
+    setupStandardSearch('searchGuruForm');
+    setupStandardSearch('searchSiswaForm');
+    setupStandardSearch('searchAkunForm');
+
 });

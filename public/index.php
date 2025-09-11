@@ -22,6 +22,7 @@ require_once '../app/models/Kelas_model.php';
 require_once '../app/models/Siswa_model.php';
 require_once '../app/models/Peminjaman_model.php';
 require_once '../app/models/Profile_model.php';
+require_once '../app/models/Staff_model.php';
 
 // =================================================================
 // PARSING URL
@@ -67,12 +68,34 @@ elseif ($controller === 'admin') {
     } 
     
     // --- Manajemen Pengguna ---
-    elseif ($method === 'pengguna') { $adminController->manajemenPengguna($param1); } 
+    elseif ($method === 'pengguna') { $adminController->manajemenPengguna($param1, $param2); } 
     elseif ($method === 'tambah-pengguna') { $adminController->tambahPengguna(); }
     elseif ($method === 'ubah-pengguna') { $adminController->ubahPengguna(); }
     elseif ($method === 'hapus-pengguna' && !empty($param1)) { $adminController->hapusPengguna($param1); }
     elseif ($method === 'get-pengguna-detail-by-id' && !empty($param1)) { $adminController->getPenggunaDetailById($param1); }
-    
+    elseif ($method === 'tambah-staff') { $adminController->tambahStaff(); }
+    elseif ($method === 'import-staff') { $adminController->importStaff(); }
+    elseif ($method === 'searchStaff') { $adminController->searchStaff(); }
+    elseif ($method === 'hapus-staff' && !empty($param1)) { $adminController->hapusStaff($param1); }
+    elseif ($method === 'get-staff-by-id' && !empty($param1)) { $adminController->getStaffById($param1); }
+    elseif ($method === 'ubah-staff') { $adminController->ubahStaff(); }
+    elseif ($method === 'hapus-staff-massal') { $adminController->hapusStaffMassal(); }
+    elseif ($method === 'import-guru') { $adminController->importGuru(); }
+    elseif ($method === 'searchGuru') { $adminController->searchGuru(); }
+    elseif ($method === 'hapus-guru' && !empty($param1)) { $adminController->hapusGuru($param1); }
+    elseif ($method === 'get-guru-by-id' && !empty($param1)) { $adminController->getGuruById($param1); }
+    elseif ($method === 'ubah-guru') { $adminController->ubahGuru(); }
+    elseif ($method === 'detailGuru' && !empty($param1)) { $adminController->detailGuru($param1); }
+    elseif ($method === 'hapus-guru-massal') { $adminController->hapusGuruMassal(); }
+    elseif ($method === 'detailStaff' && !empty($param1)) { $adminController->detailStaff($param1); }
+    // --- Manajemen Siswa ---
+    elseif ($method === 'tambah-siswa') { $adminController->tambahSiswa(); }
+    elseif ($method === 'ubah-siswa') { $adminController->ubahSiswa(); }
+    elseif ($method === 'hapus-siswa' && !empty($param1)) { $adminController->hapusSiswa($param1); }
+    elseif ($method === 'get-siswa-by-id' && !empty($param1)) { $adminController->getSiswaById($param1); }
+    elseif ($method === 'hapus-siswa-massal') { $adminController->hapusSiswaMassal(); }
+    elseif ($method === 'import-siswa') { $adminController->importSiswa(); }
+    elseif ($method === 'detailSiswa' && !empty($param1)) { $adminController->detailSiswa($param1); }
     // --- Manajemen Barang ---
     elseif ($method === 'barang') {
         if (isset($url_parts[2]) && $url_parts[2] === 'detail' && isset($url_parts[3])) {
@@ -94,11 +117,7 @@ elseif ($controller === 'admin') {
     elseif ($method === 'hapus-guru-massal') { $adminController->hapusGuruMassal(); }
 
     // --- Manajemen Kelas & Guru ---
-    elseif ($method === 'kelas') {
-        $tab = $param1 ?: 'kelas';
-        $halaman = $param2 ?: 1;
-        $adminController->manajemenKelas($tab, $halaman);
-    }
+   elseif ($method === 'kelas') { $halaman = $param1 ?: 1; $adminController->manajemenKelas($halaman); }
     elseif ($method === 'tambah-kelas') { $adminController->tambahKelas(); }
     elseif ($method === 'get-kelas-by-id' && !empty($param1)) { $adminController->getKelasById($param1); }
     elseif ($method === 'ubah-kelas') { $adminController->ubahKelas(); }
@@ -110,19 +129,15 @@ elseif ($controller === 'admin') {
     elseif ($method === 'tambah-guru') { $adminController->tambahGuru(); }
     elseif ($method === 'get-guru-by-id' && !empty($param1)) { $adminController->getGuruById($param1); }
     elseif ($method === 'detailGuru' && !empty($param1)) { $adminController->detailGuru($param1); }
+    elseif ($method === 'ubah-password-akun') { $adminController->ubahPasswordAkun(); }
     elseif ($method === 'ubah-guru') { $adminController->ubahGuru(); }
     elseif ($method === 'hapus-guru' && !empty($param1)) { $adminController->hapusGuru($param1); }
-    
-    // --- Manajemen Siswa (CRUD di dalam Kelas) ---
-    elseif ($method === 'tambah-siswa') { $adminController->tambahSiswa(); }
-    elseif ($method === 'get-siswa-by-id' && !empty($param1)) { $adminController->getSiswaById($param1); }
-    elseif ($method === 'ubah-siswa') { $adminController->ubahSiswa(); }
-    elseif ($method === 'hapus-siswa' && !empty($param1) && !empty($param2)) { $adminController->hapusSiswa($param1, $param2); }
-    elseif ($method === 'detailSiswa' && !empty($param1)) { $adminController->detailSiswa($param1); }
-    // --- PENAMBAHAN RUTE BARU UNTUK SISWA MASSAL ---
-    elseif ($method === 'import-siswa') { $adminController->importSiswa(); }
-    elseif ($method === 'hapus-siswa-massal') { $adminController->hapusSiswaMassal(); }
-    // --- Manajemen Laporan ---
+    elseif ($method === 'detailStaff' && !empty($param1)) { $adminController->detailStaff($param1); }
+    elseif ($method === 'getStaffById' && !empty($param1)) { $adminController->getStaffById($param1); }
+    elseif ($method === 'ubah-staff') { $adminController->ubahStaff(); }
+    elseif ($method === 'hapus-staff' && !empty($param1)) { $adminController->hapusStaff($param1); }
+    elseif ($method === 'tambah-staff') { $adminController->tambahStaff(); }
+    elseif ($method === 'detailStaff' && !empty($param1)) { $adminController->detailStaff($param1); }
     elseif ($method === 'laporan') {
         $halaman = $param1 ?? 1;
         $adminController->laporanRiwayat($halaman);
@@ -212,4 +227,3 @@ else {
     http_response_code(404);
     echo "<h1>404 Not Found</h1> Halaman yang Anda cari tidak ditemukan.";
 }
-

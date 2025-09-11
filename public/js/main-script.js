@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setActiveLink('admin', adminNavs);
         setActiveLink('guru', guruNavs);
         setActiveLink('siswa', siswaNavs);
-
+        /* 
         // Modal hapus universal bisa digunakan oleh peran lain, jadi tetap di sini
         const universalDeleteModal = document.getElementById('deleteModal');
         if (universalDeleteModal) {
@@ -32,5 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (closeBtn) closeBtn.addEventListener('click', closeModal);
             window.addEventListener('click', (e) => { if (e.target === universalDeleteModal) closeModal(); });
         }
+        */
     }
 });
