@@ -8,6 +8,40 @@ class Kelas_model {
         $this->db = new Database;
     }
 
+    /**
+     * ==========================================================
+     * FUNGSI GET KELAS (PAGINASI & SEARCH)
+     * ==========================================================
+     */
+    public function getKelasPaginated($offset, $limit, $keyword = null) {
+        $sql = 'SELECT k.*, g.nama as nama_wali_kelas, g.nip FROM ' . $this->table . ' k LEFT JOIN guru g ON k.wali_kelas_id = g.id';
+        if (!empty($keyword)) {
+            $sql .= ' WHERE k.nama_kelas LIKE :keyword OR g.nama LIKE :keyword';
+        }
+        $sql .= ' ORDER BY k.nama_kelas ASC LIMIT :limit OFFSET :offset';
+        
+        $this->db->query($sql);
+        if (!empty($keyword)) {
+            $this->db->bind(':keyword', '%' . $keyword . '%');
+        }
+        $this->db->bind(':limit', $limit, PDO::PARAM_INT);
+        $this->db->bind(':offset', $offset, PDO::PARAM_INT);
+        return $this->db->resultSet();
+    }
+
+    public function countAllKelas($keyword = null) {
+        $sql = 'SELECT COUNT(k.id) as total FROM ' . $this->table . ' k LEFT JOIN guru g ON k.wali_kelas_id = g.id';
+        if (!empty($keyword)) {
+            $sql .= ' WHERE k.nama_kelas LIKE :keyword OR g.nama LIKE :keyword';
+        }
+        $this->db->query($sql);
+        if (!empty($keyword)) {
+            $this->db->bind(':keyword', '%' . $keyword . '%');
+        }
+        $result = $this->db->single();
+        return $result ? (int)$result['total'] : 0;
+    }
+
     
     public function getKelasById($id) {
         $this->db->query(
@@ -41,13 +75,18 @@ class Kelas_model {
         return $this->db->rowCount();
     }
 
+    // ✅ Perbaikan: Menambahkan try-catch untuk menangani error database
     public function hapusKelas($id) {
-        $query = "DELETE FROM " . $this->table . " WHERE id = :id";
-        $this->db->query($query);
-        $this->db->bind('id', $id);
-
-        $this->db->execute();
-        return $this->db->rowCount();
+        try {
+            $query = "DELETE FROM " . $this->table . " WHERE id = :id";
+            $this->db->query($query);
+            $this->db->bind('id', $id);
+            $this->db->execute();
+            return $this->db->rowCount();
+        } catch (PDOException $e) {
+            // Mengembalikan 0 jika terjadi error (misalnya karena foreign key)
+            return 0;
+        }
     }
 
     public function tambahKelasBatch($dataKelas) {

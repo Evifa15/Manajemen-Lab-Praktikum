@@ -88,6 +88,9 @@ elseif ($controller === 'admin') {
     elseif ($method === 'detailGuru' && !empty($param1)) { $adminController->detailGuru($param1); }
     elseif ($method === 'hapus-guru-massal') { $adminController->hapusGuruMassal(); }
     elseif ($method === 'detailStaff' && !empty($param1)) { $adminController->detailStaff($param1); }
+    elseif ($method === 'assignSiswaToKelas') { $adminController->assignSiswaToKelas(); } 
+    elseif ($method === 'hapusSiswaDariKelas' && !empty($param1)) { $adminController->hapusSiswaDariKelas($param1); }
+    elseif ($method === 'remove-siswa-massal') { $adminController->removeSiswaDariKelasMassal(); }
     // --- Manajemen Siswa ---
     elseif ($method === 'tambah-siswa') { $adminController->tambahSiswa(); }
     elseif ($method === 'ubah-siswa') { $adminController->ubahSiswa(); }

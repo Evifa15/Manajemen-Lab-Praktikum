@@ -25,7 +25,6 @@ class Siswa_model {
             $this->db->execute();
             $userId = $this->db->lastInsertId();
 
-            // ✅ Perbaikan: Normalisasi 'jenis_kelamin' sebelum disimpan
             $data['jenis_kelamin'] = str_replace('-', ' ', $data['jenis_kelamin']);
 
             $query = "INSERT INTO siswa (user_id, id_siswa, nama, jenis_kelamin, ttl, agama, alamat, no_hp, email, foto, kelas_id) 
@@ -59,35 +58,36 @@ class Siswa_model {
      * FUNGSI GET & COUNT SEMUA SISWA (MASTER DATA)
      * ==========================================================
      */
-    public function getAllSiswaPaginated($offset, $limit, $keyword = null) {
-        $sql = 'SELECT id, id_siswa, nama, jenis_kelamin, no_hp FROM ' . $this->table;
-        if (!empty($keyword)) {
-            $sql .= ' WHERE nama LIKE :keyword OR id_siswa LIKE :keyword OR jenis_kelamin LIKE :keyword OR no_hp LIKE :keyword';
-        }
-        $sql .= ' ORDER BY nama ASC LIMIT :limit OFFSET :offset';
-        
-        $this->db->query($sql);
-        if (!empty($keyword)) {
-            $this->db->bind(':keyword', '%' . $keyword . '%');
-        }
-        $this->db->bind(':limit', $limit, PDO::PARAM_INT);
-        $this->db->bind(':offset', $offset, PDO::PARAM_INT);
-        return $this->db->resultSet();
+   public function getAllSiswaPaginated($offset, $limit, $keyword = null) {
+    $sql = 'SELECT id, id_siswa, nama, jenis_kelamin, no_hp FROM ' . $this->table;
+    if (!empty($keyword)) {
+        // Perubahan di sini: tambahkan 'jenis_kelamin' dan 'no_hp' ke klausa WHERE
+        $sql .= ' WHERE nama LIKE :keyword OR id_siswa LIKE :keyword OR jenis_kelamin LIKE :keyword OR no_hp LIKE :keyword';
     }
-
-    public function countAllSiswa($keyword = null) {
-        $sql = 'SELECT COUNT(id) as total FROM ' . $this->table;
-        if (!empty($keyword)) {
-            $sql .= ' WHERE nama LIKE :keyword OR id_siswa LIKE :keyword OR jenis_kelamin LIKE :keyword OR no_hp LIKE :keyword';
-        }
-        $this->db->query($sql);
-        if (!empty($keyword)) {
-            $this->db->bind(':keyword', '%' . $keyword . '%');
-        }
-        $result = $this->db->single();
-        return $result ? (int)$result['total'] : 0;
-    }
+    $sql .= ' ORDER BY nama ASC LIMIT :limit OFFSET :offset';
     
+    $this->db->query($sql);
+    if (!empty($keyword)) {
+        $this->db->bind(':keyword', '%' . $keyword . '%');
+    }
+    $this->db->bind(':limit', $limit, PDO::PARAM_INT);
+    $this->db->bind(':offset', $offset, PDO::PARAM_INT);
+    return $this->db->resultSet();
+}
+
+public function countAllSiswa($keyword = null) {
+    $sql = 'SELECT COUNT(id) as total FROM ' . $this->table;
+    if (!empty($keyword)) {
+        // Perubahan di sini: tambahkan 'jenis_kelamin' dan 'no_hp' ke klausa WHERE
+        $sql .= ' WHERE nama LIKE :keyword OR id_siswa LIKE :keyword OR jenis_kelamin LIKE :keyword OR no_hp LIKE :keyword';
+    }
+    $this->db->query($sql);
+    if (!empty($keyword)) {
+        $this->db->bind(':keyword', '%' . $keyword . '%');
+    }
+    $result = $this->db->single();
+    return $result ? (int)$result['total'] : 0;
+}
     /**
      * ==========================================================
      * FUNGSI GET SISWA BY ID
@@ -107,7 +107,6 @@ class Siswa_model {
     public function updateSiswa($data) {
         $this->db->beginTransaction();
         try {
-            // ✅ Perbaikan: Normalisasi 'jenis_kelamin' sebelum disimpan
             $data['jenis_kelamin'] = str_replace('-', ' ', $data['jenis_kelamin']);
 
             $query = "UPDATE " . $this->table . " SET
@@ -173,11 +172,6 @@ class Siswa_model {
         }
     }
 
-    /**
-     * ==========================================================
-     * FUNGSI HAPUS SISWA MASSAL
-     * ==========================================================
-     */
     public function hapusSiswaMassal($ids) {
         if (empty($ids)) {
             return 0;
@@ -222,7 +216,6 @@ class Siswa_model {
      * ==========================================================
      * FUNGSI IMPORT SISWA BATCH
      * ==========================================================
-     * Mengimpor data siswa secara massal dari array (hasil parse CSV).
      */
     public function importSiswaBatch($dataSiswa) {
         if (empty($dataSiswa)) {
@@ -244,4 +237,159 @@ class Siswa_model {
         
         return ['success' => $berhasil, 'failed' => $gagal, 'errors' => $errors];
     }
+
+    /**
+     * ==========================================================
+     * FUNGSI GET & COUNT SISWA BERDASARKAN KELAS
+     * ==========================================================
+     */
+    public function getSiswaByKelasIdPaginated($kelasId, $offset, $limit, $keyword = null) {
+        $sql = 'SELECT * FROM ' . $this->table . ' WHERE kelas_id = :kelas_id';
+        if (!empty($keyword)) {
+    $sql .= ' AND (nama LIKE :keyword OR id_siswa LIKE :keyword OR jenis_kelamin LIKE :keyword OR no_hp LIKE :keyword)';
 }
+        $sql .= ' ORDER BY nama ASC LIMIT :limit OFFSET :offset';
+        
+        $this->db->query($sql);
+        $this->db->bind(':kelas_id', $kelasId, PDO::PARAM_INT);
+        if (!empty($keyword)) {
+            $this->db->bind(':keyword', '%' . $keyword . '%');
+        }
+        $this->db->bind(':limit', $limit, PDO::PARAM_INT);
+        $this->db->bind(':offset', $offset, PDO::PARAM_INT);
+        return $this->db->resultSet();
+    }
+
+    public function countSiswaByKelasId($kelasId, $keyword = null) {
+        $sql = 'SELECT COUNT(id) as total FROM ' . $this->table . ' WHERE kelas_id = :kelas_id';
+        if (!empty($keyword)) {
+    $sql .= ' AND (nama LIKE :keyword OR id_siswa LIKE :keyword OR jenis_kelamin LIKE :keyword OR no_hp LIKE :keyword)';
+}
+        $this->db->query($sql);
+        $this->db->bind(':kelas_id', $kelasId, PDO::PARAM_INT);
+        if (!empty($keyword)) {
+            $this->db->bind(':keyword', '%' . $keyword . '%');
+        }
+        $result = $this->db->single();
+        return $result ? (int)$result['total'] : 0;
+    }
+
+    /**
+     * ==========================================================
+     * FUNGSI GET SISWA BELUM PUNYA KELAS
+     * ==========================================================
+     */
+    public function getUnassignedSiswa() {
+        $this->db->query('SELECT id, id_siswa, nama FROM ' . $this->table . ' WHERE kelas_id IS NULL ORDER BY nama ASC');
+        return $this->db->resultSet();
+    }
+    
+    /**
+     * ==========================================================
+     * FUNGSI GET SISWA BERDASARKAN NIS DALAM BATCH
+     * ==========================================================
+     * Mengambil ID siswa dari array NIS yang diberikan.
+     */
+    public function getSiswaByNisInBatch($nises) {
+        if (empty($nises)) return [];
+        $placeholders = implode(',', array_fill(0, count($nises), '?'));
+        
+        $query = "SELECT id, id_siswa FROM " . $this->table . " WHERE id_siswa IN ({$placeholders})";
+        $this->db->query($query);
+        foreach ($nises as $k => $nis) {
+            $this->db->bind($k + 1, $nis);
+        }
+        return $this->db->resultSet();
+    }
+
+    /**
+     * ==========================================================
+     * FUNGSI ASSIGN SISWA SECARA MASSAL KE KELAS
+     * ==========================================================
+     * Memasukkan siswa ke dalam kelas tertentu.
+     */
+    public function assignSiswaBatchToKelas($siswaIds, $kelasId) {
+        if (empty($siswaIds) || empty($kelasId)) {
+            return 0;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($siswaIds), '?'));
+        
+        // Cek dulu apakah siswa sudah ada di kelas lain untuk menghindari duplikasi
+        $query = "UPDATE " . $this->table . " SET kelas_id = ? WHERE id IN ({$placeholders}) AND kelas_id IS NULL";
+        
+        $this->db->query($query);
+        $this->db->bind(1, $kelasId);
+        foreach ($siswaIds as $k => $id) {
+            $this->db->bind($k + 2, $id);
+        }
+        
+        $this->db->execute();
+        return $this->db->rowCount();
+    }
+    
+    /**
+     * ==========================================================
+     * FUNGSI ASSIGN SATU SISWA KE KELAS
+     * ==========================================================
+     */
+    public function assignSiswaToKelas($siswaId, $kelasId) {
+        $query = "UPDATE " . $this->table . " SET kelas_id = :kelas_id WHERE id = :id AND kelas_id IS NULL";
+        $this->db->query($query);
+        $this->db->bind('kelas_id', $kelasId);
+        $this->db->bind('id', $siswaId);
+        $this->db->execute();
+        return $this->db->rowCount();
+    }
+
+    public function getUnassignedSiswaByKeyword($keyword = null) {
+    $sql = 'SELECT id, id_siswa, nama FROM ' . $this->table . ' WHERE kelas_id IS NULL';
+    if (!empty($keyword)) {
+        $sql .= ' AND (nama LIKE :keyword OR id_siswa LIKE :keyword)';
+    }
+    $sql .= ' ORDER BY nama ASC';
+    
+    $this->db->query($sql);
+    
+    if (!empty($keyword)) {
+        $this->db->bind(':keyword', '%' . $keyword . '%');
+    }
+    
+    return $this->db->resultSet();
+}
+/**
+     * ==========================================================
+     * FUNGSI MENGELUARKAN SISWA DARI KELAS (BARU)
+     * ==========================================================
+     */
+    public function removeSiswaFromKelas($siswaId) {
+        $query = "UPDATE " . $this->table . " SET kelas_id = NULL WHERE id = :id";
+        $this->db->query($query);
+        $this->db->bind('id', $siswaId);
+        $this->db->execute();
+        return $this->db->rowCount();
+    }
+
+
+    /**
+     * ==========================================================
+     * FUNGSI MENGELUARKAN SISWA DARI KELAS SECARA MASSAL
+     * ==========================================================
+     */
+    public function removeSiswaFromKelasMassal($ids) {
+        if (empty($ids)) {
+            return 0;
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        
+        $query = "UPDATE " . $this->table . " SET kelas_id = NULL WHERE id IN ({$placeholders})";
+        
+        $this->db->query($query);
+        foreach ($ids as $k => $id) {
+            $this->db->bind($k + 1, $id);
+        }
+        $this->db->execute();
+        return $this->db->rowCount();
+    }
+}
+
