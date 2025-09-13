@@ -41,7 +41,7 @@ class SiswaController {
         
         $filters = [
             'keyword' => $_GET['search'] ?? null,
-            'ketersediaan' => $_GET['filter_ketersediaan'] ?? null
+            'status' => $_GET['filter_ketersediaan'] ?? null // Ubah nama variabel menjadi 'status'
         ];
         
         $items = $barangModel->getBarangPaginated($offset, $limit, $filters);
@@ -86,6 +86,8 @@ class SiswaController {
 
             $barang = $barangModel->getBarangById($barang_id);
 
+            // ✅ PERBAIKAN DI SINI:
+            // Tambahkan pengecekan tambahan untuk memastikan stok > 0 sebelum menambahkan ke keranjang
             if ($barang && $barang['jumlah'] > 0) {
                 if (!in_array($barang_id, $_SESSION['keranjang'])) {
                     $_SESSION['keranjang'][] = $barang_id;
@@ -94,13 +96,12 @@ class SiswaController {
                     Flasher::setFlash('Info!', 'Barang sudah ada di keranjang.', 'danger');
                 }
             } else {
-                Flasher::setFlash('Gagal!', 'Stok barang sudah habis.', 'danger');
+                Flasher::setFlash('Gagal!', 'Stok barang sudah habis atau tidak tersedia.', 'danger');
             }
         }
         header('Location: ' . BASEURL . '/siswa/katalog');
         exit;
     }
-    
     /**
      * Menghapus item dari keranjang (session).
      */
@@ -121,66 +122,72 @@ class SiswaController {
      * Memproses semua item di keranjang untuk diajukan sebagai peminjaman.
      */
     public function prosesPeminjaman() {
-        $this->checkAuth();
+    $this->checkAuth();
 
-        if ($_SERVER['REQUEST_METHOD'] == 'POST' && !empty($_SESSION['keranjang'])) {
-            $siswaModel = new Siswa_model();
-            $kelasModel = new Kelas_model();
-            $peminjamanModel = new Peminjaman_model();
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && !empty($_POST['barang_id'])) {
+        $siswaModel = new Siswa_model();
+        $kelasModel = new Kelas_model();
+        $peminjamanModel = new Peminjaman_model();
+        $barangModel = new Barang_model(); 
 
-            // 1. Dapatkan data siswa dan kelasnya
-            $siswa = $siswaModel->getSiswaByUserId($_SESSION['user_id']);
-            if (!$siswa) {
-                Flasher::setFlash('Gagal!', 'Data siswa tidak ditemukan.', 'danger');
-                header('Location: ' . BASEURL . '/siswa/katalog');
-                exit;
-            }
-
-            // 2. Dapatkan ID wali kelas dari data kelas
-            $kelas = $kelasModel->getKelasById($siswa['kelas_id']);
-            $waliKelasId = $kelas['wali_kelas_id'] ?? null;
-
-            if (is_null($waliKelasId)) {
-                Flasher::setFlash('Gagal!', 'Kelas Anda belum memiliki wali kelas. Hubungi Admin.', 'danger');
-                header('Location: ' . BASEURL . '/siswa/katalog');
-                exit;
-            }
-
-            // 3. Siapkan data untuk disimpan
-            $dataUntukDisimpan = [];
-            foreach ($_SESSION['keranjang'] as $barang_id) {
-                $dataUntukDisimpan[] = [
-                    'user_id' => $_SESSION['user_id'],
-                    'barang_id' => $barang_id,
-                    'tanggal_pinjam' => $_POST['tanggal_pinjam'],
-                    'tanggal_kembali_diajukan' => $_POST['tanggal_kembali'],
-                    'keperluan' => $_POST['keperluan'],
-                    'verifikator_id' => $waliKelasId
-                ];
-            }
-
-            // 4. Proses penyimpanan batch
-            $hasil = $peminjamanModel->createPeminjamanBatch($dataUntukDisimpan);
-
-            if ($hasil > 0) {
-                unset($_SESSION['keranjang']);
-                Flasher::setFlash('Berhasil!', 'Pengajuan Anda telah dikirim ke wali kelas untuk verifikasi.', 'success');
-                header('Location: ' . BASEURL . '/siswa/katalog'); // Kembali ke katalog setelah berhasil
-                exit;
-            } else {
-                Flasher::setFlash('Gagal!', 'Terjadi kesalahan saat memproses pengajuan.', 'danger');
-            }
-        } else {
-             Flasher::setFlash('Gagal!', 'Keranjang kosong atau permintaan tidak valid.', 'danger');
+        $siswa = $siswaModel->getSiswaByUserId($_SESSION['user_id']);
+        if (!$siswa) {
+            Flasher::setFlash('Gagal!', 'Data siswa tidak ditemukan.', 'danger');
+            header('Location: ' . BASEURL . '/siswa/katalog');
+            exit;
         }
-        
-        header('Location: ' . BASEURL . '/siswa/katalog');
-        exit;
+
+        $kelas = $kelasModel->getKelasById($siswa['kelas_id']);
+        $waliKelasId = $kelas['wali_kelas_id'] ?? null;
+
+        if (is_null($waliKelasId)) {
+            Flasher::setFlash('Gagal!', 'Kelas Anda belum memiliki wali kelas. Hubungi Admin.', 'danger');
+            header('Location: ' . BASEURL . '/siswa/katalog');
+            exit;
+        }
+
+        $dataUntukDisimpan = [];
+        $jumlah_pinjam_form = $_POST['jumlah_pinjam'];
+
+        foreach ($_POST['barang_id'] as $barang_id) {
+            $jumlah = isset($jumlah_pinjam_form[$barang_id]) ? (int)$jumlah_pinjam_form[$barang_id] : 1;
+
+            $barang = $barangModel->getBarangById($barang_id);
+            if (!$barang || $jumlah <= 0 || $jumlah > $barang['jumlah']) {
+                Flasher::setFlash('Gagal!', 'Jumlah peminjaman untuk ' . htmlspecialchars($barang['nama_barang']) . ' tidak valid atau melebihi stok yang tersedia.', 'danger');
+                header('Location: ' . BASEURL . '/siswa/katalog');
+                exit;
+            }
+
+            $dataUntukDisimpan[] = [
+                'user_id' => $_SESSION['user_id'],
+                'barang_id' => $barang_id,
+                'jumlah_pinjam' => $jumlah,
+                'tanggal_pinjam' => $_POST['tanggal_pinjam'],
+                'tanggal_kembali_diajukan' => $_POST['tanggal_kembali'],
+                'keperluan' => $_POST['keperluan'],
+                'verifikator_id' => $waliKelasId
+            ];
+        }
+
+        $hasil = $peminjamanModel->createPeminjamanBatch($dataUntukDisimpan);
+
+        if ($hasil > 0) {
+            unset($_SESSION['keranjang']);
+            Flasher::setFlash('Berhasil!', 'Pengajuan Anda telah dikirim ke wali kelas untuk verifikasi.', 'success');
+        } else {
+            Flasher::setFlash('Gagal!', 'Terjadi kesalahan saat memproses pengajuan.', 'danger');
+        }
+    } else {
+         Flasher::setFlash('Gagal!', 'Keranjang kosong atau permintaan tidak valid.', 'danger');
     }
 
-    /**
-     * Menampilkan halaman pengembalian barang.
-     */
+    header('Location: ' . BASEURL . '/siswa/katalog');
+    exit;
+}
+    /** 
+    * Menampilkan halaman pengembalian barang.
+    */
     public function pengembalianBarang() {
         $this->checkAuth();
         $data = [

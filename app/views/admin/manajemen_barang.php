@@ -12,14 +12,7 @@
                     </button>
                 </div>
 
-                <div class="filter-container">
-                    <select name="filter_kondisi" onchange="this.form.submit()">
-                        <option value="">Semua Kondisi</option>
-                        <option value="baik" <?= ($data['filters']['kondisi'] ?? '') == 'baik' ? 'selected' : ''; ?>>Baik</option>
-                        <option value="rusak ringan" <?= ($data['filters']['kondisi'] ?? '') == 'rusak ringan' ? 'selected' : ''; ?>>Rusak Ringan</option>
-                        <option value="rusak berat" <?= ($data['filters']['kondisi'] ?? '') == 'rusak berat' ? 'selected' : ''; ?>>Rusak Berat</option>
-                    </select>
-                </div>
+                
                 
                 <div class="filter-container">
                     <select name="filter_status" onchange="this.form.submit()">
@@ -130,14 +123,6 @@
                     </div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label for="status">Status</label>
-                        <select id="status" name="status" required>
-                            <option value="Tersedia">Tersedia</option>
-                            <option value="Terbatas">Terbatas</option>
-                            <option value="Tidak Tersedia">Tidak Tersedia</option>
-                        </select>
-                    </div>
                      <div class="form-group">
                         <label for="lokasi_penyimpanan">Lokasi Penyimpanan</label>
                         <input type="text" id="lokasi_penyimpanan" name="lokasi_penyimpanan">

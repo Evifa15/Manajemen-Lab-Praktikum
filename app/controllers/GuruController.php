@@ -17,66 +17,29 @@ class GuruController {
     }
 
     public function verifikasiPeminjaman() {
-        $this->checkAuth();
-        $peminjamanModel = new Peminjaman_model();
-        $guruModel = new Guru_model();
+    $this->checkAuth();
+    $peminjamanModel = new Peminjaman_model();
+    $guruModel = new Guru_model();
 
-        // Dapatkan data guru yang sedang login
-        $guru = $guruModel->getGuruByUserId($_SESSION['user_id']);
-        
-        $requests = []; // Siapkan array kosong sebagai default
-        
-        // PERBAIKAN: Hanya jalankan query jika data guru ditemukan
-        if ($guru && isset($guru['id'])) {
-            // Ambil data peminjaman yang perlu diverifikasi oleh guru ini
-            $requests = $peminjamanModel->getPeminjamanForVerification($guru['id']);
-        } else {
-            // Beri pesan jika profil guru tidak lengkap
-            Flasher::setFlash('Peringatan!', 'Data profil guru Anda tidak lengkap. Silakan hubungi Administrator.', 'danger');
-        }
+    $guru = $guruModel->getGuruByUserId($_SESSION['user_id']);
 
-        $data = [ 
-            'title' => 'Verifikasi Peminjaman', 
-            'username' => $_SESSION['username'],
-            'requests' => $requests
-        ];
-        
-        $this->view('guru/verifikasi_peminjaman', $data);
-    }
-    
-    public function prosesVerifikasi() {
-        $this->checkAuth();
+    $requests = [];
 
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $peminjamanModel = new Peminjaman_model();
-            $barangModel = new Barang_model();
-
-            $peminjaman_id = $_POST['peminjaman_id'];
-            $status = $_POST['status']; // 'Disetujui' atau 'Ditolak'
-
-            $peminjaman = $peminjamanModel->getPeminjamanById($peminjaman_id);
-
-            if (!$peminjaman) {
-                Flasher::setFlash('Gagal!', 'Data peminjaman tidak ditemukan.', 'danger');
-                header('Location: ' . BASEURL . '/guru/verifikasi');
-                exit;
-            }
-
-            if ($status === 'Ditolak') {
-                $barangModel->tambahStok($peminjaman['barang_id'], 1);
-            }
-            
-            if ($peminjamanModel->updateStatusPeminjaman($peminjaman_id, $status) > 0) {
-                Flasher::setFlash('Berhasil!', 'Status peminjaman telah diperbarui.', 'success');
-            } else {
-                Flasher::setFlash('Gagal!', 'Gagal memperbarui status peminjaman.', 'danger');
-            }
-        }
-
-        header('Location: ' . BASEURL . '/guru/verifikasi');
-        exit;
+    if ($guru && isset($guru['id'])) {
+        // ✅ Mengambil data peminjaman yang perlu diverifikasi
+        $requests = $peminjamanModel->getPeminjamanForVerification($guru['id']);
+    } else {
+        Flasher::setFlash('Peringatan!', 'Data profil guru Anda tidak lengkap. Silakan hubungi Administrator.', 'danger');
     }
 
+    $data = [ 
+        'title' => 'Verifikasi Peminjaman', 
+        'username' => $_SESSION['username'],
+        'requests' => $requests
+    ];
+
+    $this->view('guru/verifikasi_peminjaman', $data);
+}
     public function daftarSiswaWali() {
         $this->checkAuth();
         $data = [ 'title' => 'Daftar Siswa Wali', 'username' => $_SESSION['username'] ];

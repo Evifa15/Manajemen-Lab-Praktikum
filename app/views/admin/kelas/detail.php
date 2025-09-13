@@ -74,20 +74,7 @@
                             <td><?= htmlspecialchars($siswa['nama']); ?></td>
                             <td><?= htmlspecialchars($siswa['id_siswa']); ?></td>
                             <td><?= htmlspecialchars($siswa['jenis_kelamin']); ?></td>
-<<<<<<< HEAD
-                            <td><?= htmlspecialchars($siswa['status'] ?? 'Murid'); ?></td>
-                            <td class="action-buttons">
-                                <a href="<?= BASEURL ?>/admin/detailSiswa/<?= $siswa['id'] ?>" class="view-btn" title="Lihat Detail"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/></svg></a>
-                                <button type="button" class="edit-status-btn" data-id="<?= $siswa['id']; ?>" data-nama="<?= htmlspecialchars($siswa['nama']); ?>" data-status="<?= htmlspecialchars($siswa['status'] ?? 'Murid'); ?>" title="Ubah Status">
-                                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"></path></svg>
-                                </button>
-                                <a href="#" class="delete-siswa-btn" data-id="<?= $siswa['id']; ?>" title="Hapus" onclick="showDeleteModal(this)">
-                                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>
-                                </a>   
-                            </td>
-=======
                             <td><?= htmlspecialchars($siswa['no_hp'] ?? '-'); ?></td>
->>>>>>> d91e78e571d94349aa3d4bebddb2d5d66b3b0cbd
                         </tr>
                         <?php endforeach;
                     else: ?>
@@ -117,32 +104,6 @@
     </div>
 </div>
 
-<<<<<<< HEAD
-<div id="editSiswaStatusModal" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
-        <span class="close-button">&times;</span>
-        <h3 class="modal-title">Ubah Status Siswa</h3>
-        <form id="editSiswaStatusForm" method="POST" action="<?= BASEURL; ?>/admin/updateSiswaStatus">
-            <input type="hidden" name="siswa_id" id="editStatusSiswaId">
-            <input type="hidden" name="kelas_id" value="<?= $data['kelas']['id'] ?? ''; ?>">
-            
-            <p style="margin-top: 0;">Mengubah status untuk siswa: <strong id="namaSiswaStatus"></strong></p>
-
-            <div class="form-group">
-                <label for="status_siswa">Status</label>
-                <select id="status_siswa" name="status" required>
-                    <option value="Murid">Murid</option>
-                    <option value="Ketua Murid">Ketua Murid</option>
-                </select>
-            </div>
-            <button type="submit">Simpan Perubahan</button>
-        </form>
-    </div>
-</div>
-
-
-=======
->>>>>>> d91e78e571d94349aa3d4bebddb2d5d66b3b0cbd
 <div id="assignSiswaModal" class="modal">
     <div class="modal-content">
         <span class="close-button">&times;</span>
@@ -180,7 +141,12 @@
                 <div class="form-group"><label for="id_siswa">ID Siswa (NIS)</label><input type="text" id="id_siswa" name="id_siswa" required></div>
             </div>
             <div class="form-row">
-                <div class="form-group"><label for="jenis_kelamin_siswa">Jenis Kelamin</label><select id="jenis_kelamin_siswa" name="jenis_kelamin" required><option value="Laki laki">Laki laki</option><option value="Perempuan">Perempuan</option></select></div>
+                <div class="form-group"><label for="jenis_kelamin_siswa">Jenis Kelamin</label>
+                    <select id="jenis_kelamin_siswa" name="jenis_kelamin" required>
+                        <option value="Laki laki">Laki laki</option>
+                        <option value="Perempuan">Perempuan</option>
+                    </select>
+                </div>
                 <div class="form-group"><label for="ttl_siswa">Tempat, Tanggal Lahir</label><input type="text" id="ttl_siswa" name="ttl"></div>
             </div>
             <div class="form-row">
@@ -203,7 +169,7 @@
             <input type="hidden" name="kelas_id" value="<?= $data['kelas']['id'] ?? ''; ?>">
             <div class="import-instructions" style="background-color: #f0f2f5; border-left: 4px solid #4CAF50; padding: 15px; margin-bottom: 1.5rem; border-radius: 5px; font-size: 14px;">
                 <strong>Petunjuk:</strong>
-                <ul style="padding-left: 20px; margin-top: 10px;">
+                <ul style="padding-left: 20px; margin-top: 10px; line-height: 1.6;">
                     <li>Gunakan file dengan format <strong>.csv</strong>.</li>
                     <li>File hanya perlu berisi kolom <strong>NIS</strong> (ID Siswa) yang sudah terdaftar di sistem.</li>
                     <li>Baris pertama (header) akan dilewati.</li>

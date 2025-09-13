@@ -35,6 +35,7 @@
                             <div class="card-info">
                                 <span class="item-status-label <?= strtolower(str_replace(' ', '-', $item['status'])); ?>"><?= htmlspecialchars($item['status']); ?></span>
                                 <h4 class="katalog-title"><?= htmlspecialchars($item['nama_barang']); ?></h4>
+                                <p class="katalog-code"><?= htmlspecialchars($item['kode_barang']); ?></p> 
                             </div>
                         </div>
                         <div class="card-form-action">
@@ -88,10 +89,19 @@
                         <li class="keranjang-item">
                             <div class="keranjang-item-info" style="width: 50%;">
                                 <img src="<?= BASEURL . '/img/barang/' . htmlspecialchars($item['gambar'] ?? 'images.png'); ?>" alt="<?= htmlspecialchars($item['nama_barang']); ?>">
-                                <span><?= htmlspecialchars($item['nama_barang']); ?></span>
+                                <div class="item-details">
+                                    <span><?= htmlspecialchars($item['nama_barang']); ?></span>
+                                    <span class="item-code"><?= htmlspecialchars($item['kode_barang']); ?></span> </div>
                             </div>
                             <div style="width: 25%;"><span class="item-status-label <?= strtolower(str_replace(' ', '-', $item['status'])); ?>"><?= htmlspecialchars($item['status']); ?></span></div>
-                            <div style="width: 15%;">1</div>
+                            <div style="width: 15%;">
+                                <input type="number" 
+                                    name="jumlah_pinjam[<?= $item['id']; ?>]" 
+                                    value="1" 
+                                    min="1" 
+                                    max="<?= $item['jumlah']; ?>" 
+                                    style="width: 60px; text-align: center;">
+                            </div>
                             <div style="width: 10%;">
                                 <a href="<?= BASEURL; ?>/siswa/hapus-dari-keranjang/<?= $item['id']; ?>" class="keranjang-item-remove" title="Hapus item">&times;</a>
                             </div>
@@ -132,6 +142,9 @@
                 <div class="keranjang-actions">
                     <button type="submit" class="btn">Ajukan Semua Peminjaman</button>
                 </div>
+                <?php foreach ($data['data_keranjang'] as $item): ?>
+                    <input type="hidden" name="barang_id[]" value="<?= $item['id']; ?>">
+                <?php endforeach; ?>
             </form>
         <?php else: ?>
             <p style="text-align:center; color: #888; padding: 2rem 0;">Keranjang Anda kosong.</p>

@@ -72,9 +72,8 @@ class Siswa_model {
      * FUNGSI GET & COUNT SEMUA SISWA (MASTER DATA)
      * ==========================================================
      */
-<<<<<<< HEAD
     public function getAllSiswaPaginated($offset, $limit, $keyword = null) {
-        $sql = 'SELECT * FROM ' . $this->table;
+        $sql = 'SELECT id, id_siswa, nama, jenis_kelamin, no_hp FROM ' . $this->table;
         if (!empty($keyword)) {
             $sql .= ' WHERE nama LIKE :keyword OR id_siswa LIKE :keyword OR jenis_kelamin LIKE :keyword OR no_hp LIKE :keyword';
         }
@@ -100,38 +99,8 @@ class Siswa_model {
         }
         $result = $this->db->single();
         return $result ? (int)$result['total'] : 0;
-=======
-   public function getAllSiswaPaginated($offset, $limit, $keyword = null) {
-    $sql = 'SELECT id, id_siswa, nama, jenis_kelamin, no_hp FROM ' . $this->table;
-    if (!empty($keyword)) {
-        // Perubahan di sini: tambahkan 'jenis_kelamin' dan 'no_hp' ke klausa WHERE
-        $sql .= ' WHERE nama LIKE :keyword OR id_siswa LIKE :keyword OR jenis_kelamin LIKE :keyword OR no_hp LIKE :keyword';
->>>>>>> d91e78e571d94349aa3d4bebddb2d5d66b3b0cbd
     }
-    $sql .= ' ORDER BY nama ASC LIMIT :limit OFFSET :offset';
     
-    $this->db->query($sql);
-    if (!empty($keyword)) {
-        $this->db->bind(':keyword', '%' . $keyword . '%');
-    }
-    $this->db->bind(':limit', $limit, PDO::PARAM_INT);
-    $this->db->bind(':offset', $offset, PDO::PARAM_INT);
-    return $this->db->resultSet();
-}
-
-public function countAllSiswa($keyword = null) {
-    $sql = 'SELECT COUNT(id) as total FROM ' . $this->table;
-    if (!empty($keyword)) {
-        // Perubahan di sini: tambahkan 'jenis_kelamin' dan 'no_hp' ke klausa WHERE
-        $sql .= ' WHERE nama LIKE :keyword OR id_siswa LIKE :keyword OR jenis_kelamin LIKE :keyword OR no_hp LIKE :keyword';
-    }
-    $this->db->query($sql);
-    if (!empty($keyword)) {
-        $this->db->bind(':keyword', '%' . $keyword . '%');
-    }
-    $result = $this->db->single();
-    return $result ? (int)$result['total'] : 0;
-}
     /**
      * ==========================================================
      * FUNGSI GET SISWA BY ID
@@ -290,13 +259,8 @@ public function countAllSiswa($keyword = null) {
     public function getSiswaByKelasIdPaginated($kelasId, $offset, $limit, $keyword = null) {
         $sql = 'SELECT * FROM ' . $this->table . ' WHERE kelas_id = :kelas_id';
         if (!empty($keyword)) {
-<<<<<<< HEAD
             $sql .= ' AND (nama LIKE :keyword OR id_siswa LIKE :keyword)';
         }
-=======
-    $sql .= ' AND (nama LIKE :keyword OR id_siswa LIKE :keyword OR jenis_kelamin LIKE :keyword OR no_hp LIKE :keyword)';
-}
->>>>>>> d91e78e571d94349aa3d4bebddb2d5d66b3b0cbd
         $sql .= ' ORDER BY nama ASC LIMIT :limit OFFSET :offset';
         
         $this->db->query($sql);
@@ -312,13 +276,8 @@ public function countAllSiswa($keyword = null) {
     public function countSiswaByKelasId($kelasId, $keyword = null) {
         $sql = 'SELECT COUNT(id) as total FROM ' . $this->table . ' WHERE kelas_id = :kelas_id';
         if (!empty($keyword)) {
-<<<<<<< HEAD
             $sql .= ' AND (nama LIKE :keyword OR id_siswa LIKE :keyword)';
         }
-=======
-    $sql .= ' AND (nama LIKE :keyword OR id_siswa LIKE :keyword OR jenis_kelamin LIKE :keyword OR no_hp LIKE :keyword)';
-}
->>>>>>> d91e78e571d94349aa3d4bebddb2d5d66b3b0cbd
         $this->db->query($sql);
         $this->db->bind(':kelas_id', $kelasId, PDO::PARAM_INT);
         if (!empty($keyword)) {
@@ -424,10 +383,6 @@ public function countAllSiswa($keyword = null) {
         return $this->db->rowCount();
     }
 
-<<<<<<< HEAD
-}
-=======
-
     /**
      * ==========================================================
      * FUNGSI MENGELUARKAN SISWA DARI KELAS SECARA MASSAL
@@ -448,6 +403,15 @@ public function countAllSiswa($keyword = null) {
         $this->db->execute();
         return $this->db->rowCount();
     }
-}
 
->>>>>>> d91e78e571d94349aa3d4bebddb2d5d66b3b0cbd
+    /**
+     * ==========================================================
+     * FUNGSI GET SISWA BY USER ID (BARU)
+     * ==========================================================
+     */
+    public function getSiswaByUserId($userId) {
+        $this->db->query('SELECT * FROM ' . $this->table . ' WHERE user_id = :user_id');
+        $this->db->bind(':user_id', $userId);
+        return $this->db->single();
+    }
+}

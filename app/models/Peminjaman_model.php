@@ -34,46 +34,46 @@ class Peminjaman_model {
      * Logika pengurangan stok juga dimasukkan di sini untuk menjamin integritas data.
      */
     public function createPeminjamanBatch($dataPeminjaman) {
-        if (empty($dataPeminjaman)) {
-            return 0;
-        }
+    if (empty($dataPeminjaman)) {
+        return 0;
+    }
 
-        $this->db->beginTransaction();
+    $this->db->beginTransaction();
 
-        try {
-            $peminjamanQuery = "INSERT INTO " . $this->table . " (user_id, barang_id, tanggal_pinjam, tanggal_kembali_diajukan, status, keperluan, verifikator_id) VALUES (:user_id, :barang_id, :tanggal_pinjam, :tanggal_kembali_diajukan, :status, :keperluan, :verifikator_id)";
-            $stokQuery = "UPDATE barang SET jumlah = jumlah - 1 WHERE id = :barang_id AND jumlah > 0";
+    try {
+        $peminjamanQuery = "INSERT INTO " . $this->table . " (user_id, barang_id, jumlah_pinjam, tanggal_pinjam, tanggal_wajib_kembali, status, keperluan, verifikator_id) VALUES (:user_id, :barang_id, :jumlah_pinjam, :tanggal_pinjam, :tanggal_wajib_kembali, :status, :keperluan, :verifikator_id)";
+        $stokQuery = "UPDATE barang SET jumlah = jumlah - :jumlah WHERE id = :barang_id AND jumlah >= :jumlah";
 
-            foreach ($dataPeminjaman as $peminjaman) {
-                // 1. Kurangi stok barang
-                $this->db->query($stokQuery);
-                $this->db->bind('barang_id', $peminjaman['barang_id']);
-                $this->db->execute();
-                
-                if ($this->db->rowCount() == 0) {
-                    throw new Exception("Stok untuk barang ID {$peminjaman['barang_id']} habis atau tidak ditemukan.");
-                }
-
-                // 2. Simpan data peminjaman
-                $this->db->query($peminjamanQuery); // PERBAIKAN PENTING: Memanggil ulang query() untuk statement INSERT
-                $this->db->bind('user_id', $peminjaman['user_id']);
-                $this->db->bind('barang_id', $peminjaman['barang_id']);
-                $this->db->bind('tanggal_pinjam', $peminjaman['tanggal_pinjam']);
-                $this->db->bind('tanggal_kembali_diajukan', $peminjaman['tanggal_kembali_diajukan']);
-                $this->db->bind('status', 'Menunggu Verifikasi');
-                $this->db->bind('keperluan', $peminjaman['keperluan']);
-                $this->db->bind('verifikator_id', $peminjaman['verifikator_id']);
-                $this->db->execute();
+        foreach ($dataPeminjaman as $peminjaman) {
+            // 1. Kurangi stok barang
+            $this->db->query($stokQuery);
+            $this->db->bind('barang_id', $peminjaman['barang_id']);
+            $this->db->bind('jumlah', $peminjaman['jumlah_pinjam']);
+            $this->db->execute();
+            if ($this->db->rowCount() == 0) {
+                throw new Exception("Stok untuk barang ID {$peminjaman['barang_id']} habis atau tidak ditemukan.");
             }
 
-            $this->db->commit();
-            return count($dataPeminjaman);
-        } catch (Exception $e) {
-            $this->db->rollBack();
-            // error_log($e->getMessage()); // Bisa diaktifkan untuk debugging di server
-            return 0;
+            // 2. Simpan data peminjaman
+            $this->db->query($peminjamanQuery);
+            $this->db->bind('user_id', $peminjaman['user_id']);
+            $this->db->bind('barang_id', $peminjaman['barang_id']);
+            $this->db->bind('jumlah_pinjam', $peminjaman['jumlah_pinjam']);
+            $this->db->bind('tanggal_pinjam', $peminjaman['tanggal_pinjam']);
+            $this->db->bind('tanggal_kembali_diajukan', $peminjaman['tanggal_kembali_diajukan']);
+            $this->db->bind('status', 'Menunggu Verifikasi');
+            $this->db->bind('keperluan', $peminjaman['keperluan']);
+            $this->db->bind('verifikator_id', $peminjaman['verifikator_id']);
+            $this->db->execute();
         }
+
+        $this->db->commit();
+        return count($dataPeminjaman);
+    } catch (Exception $e) {
+        $this->db->rollBack();
+        return 0;
     }
+}
 
     /**
      * Mengambil data peminjaman yang perlu diverifikasi oleh guru spesifik.
