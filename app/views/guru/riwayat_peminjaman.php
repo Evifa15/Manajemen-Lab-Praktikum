@@ -27,8 +27,7 @@
                                 <td><?= htmlspecialchars($req['nama_barang']); ?></td>
                                 <td><?= htmlspecialchars($req['jumlah_pinjam']); ?></td>
                                 <td><?= date('d/m/Y', strtotime($req['tanggal_pinjam'])); ?></td>
-                                <td><?= date('d/m/Y', strtotime($req['tanggal_wajib_kembali'])); ?></td>
-                                <td><?= htmlspecialchars($req['keperluan']); ?></td>
+                                <td><?= date('d/m/Y', strtotime($req['tanggal_wajib_kembali'])); ?></td> <td><?= htmlspecialchars($req['keperluan']); ?></td>
                                 <td class="action-buttons">
                                     <form action="<?= BASEURL; ?>/guru/proses-verifikasi" method="post" style="display:inline;">
                                         <input type="hidden" name="peminjaman_id" value="<?= $req['id']; ?>">

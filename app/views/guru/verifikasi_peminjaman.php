@@ -1,18 +1,25 @@
 <div class="content">
     <div class="main-table-container">
-        <h3>Verifikasi Peminjaman</h3>
-        <p>Berikut adalah daftar pengajuan peminjaman dari siswa perwalian Anda yang membutuhkan persetujuan.</p>
-
+        <div class="table-controls-container" style="justify-content: flex-end;">
+            <form id="searchForm" action="<?= BASEURL; ?>/guru/verifikasi" method="GET" class="search-form-container">
+                <input type="text" id="searchInput" name="search" placeholder="Cari nama siswa, barang, atau ID..." value="<?= htmlspecialchars($data['keyword'] ?? '') ?>">
+                <button type="submit" class="search-submit-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#4CAF50"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                </button>
+            </form>
+        </div>
         <div class="table-wrapper" style="margin-top: 20px;">
+            <?php Flasher::flash(); ?>
             <table>
                 <thead>
                     <tr>
                         <th>No</th>
                         <th>Nama Siswa</th>
-                        <th>Barang yang Dipinjam</th>
-                        <th>Tanggal Pinjam</th>
-                        <th>Rencana Kembali</th>
+                        <th>Barang Dipinjam</th>
+                        <th>Jml</th>
                         <th>Keperluan</th>
+                        <th>Tgl. Pinjam</th>
+                        <th>Rencana Kembali</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -21,11 +28,18 @@
                         <?php $no = 1; foreach ($data['requests'] as $req): ?>
                             <tr>
                                 <td><?= $no++; ?></td>
-                                <td><?= htmlspecialchars($req['nama_siswa']); ?></td>
-                                <td><?= htmlspecialchars($req['nama_barang']); ?></td>
-                                <td><?= date('d/m/Y', strtotime($req['tanggal_pinjam'])); ?></td>
-                                <td><?= date('d/m/Y', strtotime($req['tanggal_kembali_diajukan'])); ?></td>
+                                <td>
+                                    <?= htmlspecialchars($req['nama_siswa']); ?><br>
+                                    <small style="color: #666;"><?= htmlspecialchars($req['id_siswa']); ?></small>
+                                </td>
+                                <td>
+                                    <?= htmlspecialchars($req['nama_barang']); ?><br>
+                                    <small style="color: #666;"><?= htmlspecialchars($req['kode_barang']); ?> | Stok: <?= htmlspecialchars($req['stok_barang']); ?></small>
+                                </td>
+                                <td><?= htmlspecialchars($req['jumlah_pinjam']); ?></td>
                                 <td><?= htmlspecialchars($req['keperluan']); ?></td>
+                                <td><?= date('d/m/Y', strtotime($req['tanggal_pinjam'])); ?></td>
+                                <td><?= date('d/m/Y', strtotime($req['tanggal_wajib_kembali'])); ?></td>
                                 <td class="action-buttons">
                                     <form action="<?= BASEURL; ?>/guru/proses-verifikasi" method="post" style="display:inline;">
                                         <input type="hidden" name="peminjaman_id" value="<?= $req['id']; ?>">
@@ -40,11 +54,26 @@
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="7" style="text-align:center;">Tidak ada permintaan verifikasi saat ini.</td>
+                            <td colspan="8" style="text-align:center;">Tidak ada permintaan verifikasi saat ini.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
             </table>
         </div>
+        
+        <?php if (isset($data['total_halaman']) && $data['total_halaman'] > 1): ?>
+            <div class="pagination-container">
+                <?php
+                    $queryParams = http_build_query(['search' => $data['keyword'] ?? '']);
+                ?>
+                <a href="<?= BASEURL ?>/guru/verifikasi/<?= max(1, $data['halaman_aktif'] - 1) ?>?<?= $queryParams ?>" class="pagination-btn <?= ($data['halaman_aktif'] <= 1) ? 'disabled' : '' ?>">Sebelumnya</a>
+                <div class="page-numbers">
+                    <?php for ($i = 1; $i <= $data['total_halaman']; $i++): ?>
+                        <a href="<?= BASEURL ?>/guru/verifikasi/<?= $i ?>?<?= $queryParams ?>" class="page-link <?= ($i == $data['halaman_aktif']) ? 'active' : '' ?>"><?= $i ?></a>
+                    <?php endfor; ?>
+                </div>
+                <a href="<?= BASEURL ?>/guru/verifikasi/<?= min($data['total_halaman'], $data['halaman_aktif'] + 1) ?>?<?= $queryParams ?>" class="pagination-btn <?= ($data['halaman_aktif'] >= $data['total_halaman']) ? 'disabled' : '' ?>">Berikutnya</a>
+            </div>
+        <?php endif; ?>
     </div>
 </div>

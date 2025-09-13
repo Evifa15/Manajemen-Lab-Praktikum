@@ -16,18 +16,24 @@ class GuruController {
         $this->view('guru/index', $data);
     }
 
-    public function verifikasiPeminjaman() {
+    public function verifikasiPeminjaman($halaman = 1) {
     $this->checkAuth();
     $peminjamanModel = new Peminjaman_model();
     $guruModel = new Guru_model();
 
-    $guru = $guruModel->getGuruByUserId($_SESSION['user_id']);
+    $halaman = max(1, (int)$halaman);
+    $limit = 10;
+    $offset = ($halaman - 1) * $limit;
 
+    $guru = $guruModel->getGuruByUserId($_SESSION['user_id']);
     $requests = [];
+    $totalHalaman = 1;
+    $keyword = $_GET['search'] ?? null;
 
     if ($guru && isset($guru['id'])) {
-        // ✅ Mengambil data peminjaman yang perlu diverifikasi
-        $requests = $peminjamanModel->getPeminjamanForVerification($guru['id']);
+        $requests = $peminjamanModel->getPeminjamanForVerification($guru['id'], $offset, $limit, $keyword);
+        $totalRequests = $peminjamanModel->countAllVerificationRequests($guru['id'], $keyword);
+        $totalHalaman = ceil($totalRequests / $limit);
     } else {
         Flasher::setFlash('Peringatan!', 'Data profil guru Anda tidak lengkap. Silakan hubungi Administrator.', 'danger');
     }
@@ -35,7 +41,10 @@ class GuruController {
     $data = [ 
         'title' => 'Verifikasi Peminjaman', 
         'username' => $_SESSION['username'],
-        'requests' => $requests
+        'requests' => $requests,
+        'halaman_aktif' => $halaman,
+        'total_halaman' => $totalHalaman,
+        'keyword' => $keyword
     ];
 
     $this->view('guru/verifikasi_peminjaman', $data);

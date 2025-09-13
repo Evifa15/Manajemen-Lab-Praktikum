@@ -78,18 +78,32 @@ class Peminjaman_model {
     /**
      * Mengambil data peminjaman yang perlu diverifikasi oleh guru spesifik.
      */
-    public function getPeminjamanForVerification($verifikator_id) {
-        $query = "SELECT p.*, s.nama as nama_siswa, s.id_siswa, b.nama_barang 
-                  FROM " . $this->table . " p 
-                  JOIN siswa s ON p.user_id = s.user_id 
-                  JOIN barang b ON p.barang_id = b.id
-                  WHERE p.verifikator_id = :verifikator_id AND p.status = 'Menunggu Verifikasi'
-                  ORDER BY p.tanggal_pinjam ASC";
-        
-        $this->db->query($query);
-        $this->db->bind('verifikator_id', $verifikator_id);
-        return $this->db->resultSet();
+    public function getPeminjamanForVerification($verifikator_id, $offset, $limit, $keyword = null) {
+    $query = "SELECT p.*, s.nama as nama_siswa, s.id_siswa, b.nama_barang, b.kode_barang, b.jumlah as stok_barang 
+              FROM " . $this->table . " p 
+              JOIN siswa s ON p.user_id = s.user_id 
+              JOIN barang b ON p.barang_id = b.id
+              WHERE p.verifikator_id = :verifikator_id AND p.status = 'Menunggu Verifikasi'";
+
+    // Tambahkan pencarian jika ada keyword
+    if (!empty($keyword)) {
+        $query .= " AND (s.nama LIKE :keyword OR s.id_siswa LIKE :keyword OR b.nama_barang LIKE :keyword)";
     }
+
+    $query .= " ORDER BY p.tanggal_pinjam ASC LIMIT :offset, :limit";
+
+    $this->db->query($query);
+    $this->db->bind('verifikator_id', $verifikator_id);
+
+    if (!empty($keyword)) {
+        $this->db->bind(':keyword', "%" . $keyword . "%");
+    }
+
+    $this->db->bind('offset', (int)$offset, PDO::PARAM_INT);
+    $this->db->bind('limit', (int)$limit, PDO::PARAM_INT);
+
+    return $this->db->resultSet();
+}
     
     /**
      * Mengambil riwayat peminjaman untuk satu siswa (dengan paginasi).
@@ -260,5 +274,28 @@ class Peminjaman_model {
 
         return $this->db->resultSet();
     }
+
+    public function countAllVerificationRequests($verifikator_id, $keyword = null) {
+    $query = "SELECT COUNT(p.id) as total 
+              FROM " . $this->table . " p 
+              JOIN siswa s ON p.user_id = s.user_id 
+              JOIN barang b ON p.barang_id = b.id
+              WHERE p.verifikator_id = :verifikator_id AND p.status = 'Menunggu Verifikasi'";
+
+    // Tambahkan pencarian jika ada keyword
+    if (!empty($keyword)) {
+        $query .= " AND (s.nama LIKE :keyword OR s.id_siswa LIKE :keyword OR b.nama_barang LIKE :keyword)";
+    }
+
+    $this->db->query($query);
+    $this->db->bind('verifikator_id', $verifikator_id);
+
+    if (!empty($keyword)) {
+        $this->db->bind(':keyword', "%" . $keyword . "%");
+    }
+
+    $result = $this->db->single();
+    return $result ? (int)$result['total'] : 0;
+}
 }
 
