@@ -290,4 +290,12 @@ class Guru_model {
             return 0;
         }
     }
+    /**
+     * Mengambil data guru berdasarkan user_id.
+     */
+    public function getGuruByUserId($userId) {
+        $this->db->query('SELECT * FROM ' . $this->table . ' WHERE user_id = :user_id');
+        $this->db->bind(':user_id', $userId);
+        return $this->db->single();
+    }
 }

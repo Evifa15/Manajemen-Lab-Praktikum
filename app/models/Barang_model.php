@@ -213,4 +213,42 @@ public function countAllBarang($filters = []) {
 
         return $this->db->resultSet();
     }
+    /**
+     * Memperbarui data barang di database.
+     */
+    public function updateBarang($data) {
+        // Logika status otomatis yang kita buat sebelumnya
+        $jumlah = (int)$data['jumlah'];
+        if ($jumlah <= 0) {
+            $data['status'] = 'Tidak Tersedia';
+        } elseif ($jumlah >= 1 && $jumlah <= 3) {
+            $data['status'] = 'Terbatas';
+        } else {
+            $data['status'] = 'Tersedia';
+        }
+    
+        $query = "UPDATE {$this->table} 
+                  SET kode_barang = :kode_barang,
+                      nama_barang = :nama_barang,
+                      jumlah = :jumlah,
+                      kondisi = :kondisi,
+                      status = :status,
+                      lokasi_penyimpanan = :lokasi_penyimpanan,
+                      tanggal_pembelian = :tanggal_pembelian,
+                      gambar = :gambar
+                  WHERE id = :id";
+    
+        $this->db->query($query);
+        $this->db->bind(':kode_barang', $data['kode_barang']);
+        $this->db->bind(':nama_barang', $data['nama_barang']);
+        $this->db->bind(':jumlah', $data['jumlah']);
+        $this->db->bind(':kondisi', $data['kondisi']);
+        $this->db->bind(':status', $data['status']);
+        $this->db->bind(':lokasi_penyimpanan', $data['lokasi_penyimpanan']);
+        $this->db->bind(':tanggal_pembelian', $data['tanggal_pembelian']);
+        $this->db->bind(':gambar', $data['gambar']);
+        $this->db->bind(':id', $data['id']);
+        $this->db->execute();
+        return $this->db->rowCount();
+    }
 }

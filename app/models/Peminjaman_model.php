@@ -60,7 +60,7 @@ class Peminjaman_model {
             $this->db->bind('barang_id', $peminjaman['barang_id']);
             $this->db->bind('jumlah_pinjam', $peminjaman['jumlah_pinjam']);
             $this->db->bind('tanggal_pinjam', $peminjaman['tanggal_pinjam']);
-            $this->db->bind('tanggal_kembali_diajukan', $peminjaman['tanggal_kembali_diajukan']);
+            $this->db->bind('tanggal_wajib_kembali', $peminjaman['tanggal_kembali_diajukan']);
             $this->db->bind('status', 'Menunggu Verifikasi');
             $this->db->bind('keperluan', $peminjaman['keperluan']);
             $this->db->bind('verifikator_id', $peminjaman['verifikator_id']);
