@@ -63,5 +63,12 @@
         <?php endif; ?>
     </div>
 </div>
-
-<?php require_once '../app/views/layouts/admin_footer.php'; ?>
+<?php
+    // Tentukan tautan kembali berdasarkan asal
+    $backLink = BASEURL . '/admin/pengguna/siswa'; // Tautan default
+    if (isset($data['origin']) && $data['origin'] === 'kelas') {
+        // Jika asal dari halaman detail kelas, kembali ke sana
+        $backLink = BASEURL . '/admin/detailKelas/' . $data['kelas_id'];
+    }
+?>
+<a href="<?= $backLink; ?>" class="btn btn-secondary" style="text-decoration: none; padding: 10px 15px; border-radius: 5px;">Kembali</a>

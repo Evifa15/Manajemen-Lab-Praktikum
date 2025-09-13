@@ -356,6 +356,7 @@ class AdminController {
         header('Location: ' . BASEURL . '/admin/kelas');
         exit;
     }
+<<<<<<< HEAD
     /**
  * =================================================================
  * PROSES IMPORT BARANG DARI FILE CSV (PERBAIKAN)
@@ -425,6 +426,26 @@ public function importBarang() {
     header('Location: ' . BASEURL . '/admin/barang');
     exit;
 }
+=======
+    
+    /**
+     * =================================================================
+     * PROSES HAPUS KELAS
+     * =================================================================
+     */
+    public function hapusKelas($id) {
+        $kelasModel = new Kelas_model();
+        $result = $kelasModel->hapusKelas($id);
+
+        if ($result > 0) {
+            Flasher::setFlash('Berhasil!', 'Data kelas berhasil dihapus.', 'success');
+        } else {
+            Flasher::setFlash('Gagal!', 'Gagal menghapus kelas. Pastikan tidak ada siswa yang terdaftar di kelas ini.', 'danger');
+        }
+        header('Location: ' . BASEURL . '/admin/kelas');
+        exit;
+    }
+>>>>>>> d91e78e571d94349aa3d4bebddb2d5d66b3b0cbd
     
     /**
      * =================================================================
@@ -864,14 +885,15 @@ public function searchStaff() {
      * =================================================================
      */
     public function detailSiswa($id) {
-        $siswaModel = new Siswa_model();
-        $data = [
-            'title' => 'Detail Siswa',
-            'siswa' => $siswaModel->getSiswaById($id)
-        ];
-        $this->view('admin/siswa/detail', $data);
-    }
-    
+    $siswaModel = new Siswa_model();
+    $data = [
+        'title' => 'Detail Siswa',
+        'siswa' => $siswaModel->getSiswaById($id),
+        'origin' => $_GET['origin'] ?? null, // Mengambil parameter origin
+        'kelas_id' => $_GET['kelas_id'] ?? null // Mengambil ID kelas jika ada
+    ];
+    $this->view('admin/siswa/detail', $data);
+}
     /**
      * =================================================================
      * PROSES UPDATE SISWA
@@ -1119,6 +1141,7 @@ public function searchStaff() {
      * =================================================================
      */
       public function searchUnassignedSiswa() {
+<<<<<<< HEAD
         header('Content-Type: application/json');
         $keyword = $_GET['keyword'] ?? null;
         $siswaModel = new Siswa_model();
@@ -1128,6 +1151,18 @@ public function searchStaff() {
         echo json_encode($siswaData);
         exit();
     }
+=======
+    header('Content-Type: application/json');
+    $keyword = $_GET['keyword'] ?? null;
+    $siswaModel = new Siswa_model();
+    
+    // Memanggil metode baru di model untuk mencari siswa yang belum punya kelas
+    $siswaData = $siswaModel->getUnassignedSiswaByKeyword($keyword);
+    
+    echo json_encode($siswaData);
+    exit();
+}
+>>>>>>> d91e78e571d94349aa3d4bebddb2d5d66b3b0cbd
 
     /**
      * =================================================================
@@ -1223,6 +1258,7 @@ public function searchStaff() {
 
     /**
      * =================================================================
+<<<<<<< HEAD
      * PROSES UPDATE STATUS SISWA (BARU)
      * =================================================================
      */
@@ -1249,6 +1285,8 @@ public function searchStaff() {
 
     /**
      * =================================================================
+=======
+>>>>>>> d91e78e571d94349aa3d4bebddb2d5d66b3b0cbd
      * PROSES HAPUS SISWA DARI KELAS
      * =================================================================
      */
@@ -1273,5 +1311,53 @@ public function searchStaff() {
         header('Location: ' . BASEURL . '/admin/detailKelas/' . $kelasId);
         exit;
     }
+<<<<<<< HEAD
   
 }
+=======
+
+    /**
+     * =================================================================
+     * PROSES MENGELUARKAN SISWA DARI KELAS SECARA MASSAL (BARU)
+     * =================================================================
+     */
+    public function removeSiswaDariKelasMassal() {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && !empty($_POST['ids']) && !empty($_POST['kelas_id'])) {
+            $ids = $_POST['ids'];
+            $kelasId = $_POST['kelas_id'];
+            $siswaModel = new Siswa_model();
+            $rowCount = $siswaModel->removeSiswaFromKelasMassal($ids);
+            
+            if ($rowCount > 0) {
+                Flasher::setFlash('Berhasil!', "{$rowCount} siswa berhasil dikeluarkan dari kelas.", 'success');
+            } else {
+                Flasher::setFlash('Gagal!', 'Tidak ada siswa yang dikeluarkan dari kelas.', 'danger');
+            }
+            header('Location: ' . BASEURL . '/admin/detailKelas/' . $kelasId);
+            exit;
+        } else {
+            Flasher::setFlash('Gagal!', 'Permintaan tidak valid.', 'danger');
+            header('Location: ' . BASEURL . '/admin/kelas');
+            exit;
+        }
+    }
+   /* =================================================================
+ * ENDPOINT AJAX UNTUK MENGAMBIL DATA SISWA BY ID
+ * =================================================================
+ */
+public function getSiswaById($id) {
+    header('Content-Type: application/json');
+    
+    // Tambahkan ob_clean() untuk membersihkan output buffer
+    // Ini akan menghapus output tidak terduga (seperti pesan Flasher atau error PHP)
+    ob_clean();
+    
+    $siswaModel = new Siswa_model();
+    $siswa = $siswaModel->getSiswaById($id);
+    echo json_encode($siswa);
+    exit();
+}
+  
+}
+  
+>>>>>>> d91e78e571d94349aa3d4bebddb2d5d66b3b0cbd

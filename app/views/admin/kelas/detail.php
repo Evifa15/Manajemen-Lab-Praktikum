@@ -50,7 +50,7 @@
         
             <?php Flasher::flash(); ?>
 
-            <form action="<?= BASEURL ?>/admin/hapus-siswa-massal" method="POST" id="bulkDeleteSiswaForm">
+           <form action="<?= BASEURL ?>/admin/remove-siswa-massal" method="POST" id="bulkDeleteSiswaForm">
                 <input type="hidden" name="kelas_id" value="<?= $data['kelas']['id']; ?>">
 
                 <table>
@@ -61,8 +61,7 @@
                             <th>Nama Siswa</th>
                             <th>ID Siswa</th>
                             <th>Jenis Kelamin</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
+                            <th>No. HP</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -75,6 +74,7 @@
                             <td><?= htmlspecialchars($siswa['nama']); ?></td>
                             <td><?= htmlspecialchars($siswa['id_siswa']); ?></td>
                             <td><?= htmlspecialchars($siswa['jenis_kelamin']); ?></td>
+<<<<<<< HEAD
                             <td><?= htmlspecialchars($siswa['status'] ?? 'Murid'); ?></td>
                             <td class="action-buttons">
                                 <a href="<?= BASEURL ?>/admin/detailSiswa/<?= $siswa['id'] ?>" class="view-btn" title="Lihat Detail"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/></svg></a>
@@ -85,10 +85,13 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>
                                 </a>   
                             </td>
+=======
+                            <td><?= htmlspecialchars($siswa['no_hp'] ?? '-'); ?></td>
+>>>>>>> d91e78e571d94349aa3d4bebddb2d5d66b3b0cbd
                         </tr>
                         <?php endforeach;
                     else: ?>
-                        <tr><td colspan="7" style="text-align:center;">Tidak ada data siswa di kelas ini.</td></tr>
+                        <tr><td colspan="6" style="text-align:center;">Tidak ada data siswa di kelas ini.</td></tr>
                     <?php endif; ?>
                     </tbody>
                 </table>
@@ -114,6 +117,7 @@
     </div>
 </div>
 
+<<<<<<< HEAD
 <div id="editSiswaStatusModal" class="modal">
     <div class="modal-content" style="max-width: 500px;">
         <span class="close-button">&times;</span>
@@ -137,6 +141,8 @@
 </div>
 
 
+=======
+>>>>>>> d91e78e571d94349aa3d4bebddb2d5d66b3b0cbd
 <div id="assignSiswaModal" class="modal">
     <div class="modal-content">
         <span class="close-button">&times;</span>

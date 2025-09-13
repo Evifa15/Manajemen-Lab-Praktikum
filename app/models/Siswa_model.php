@@ -72,6 +72,7 @@ class Siswa_model {
      * FUNGSI GET & COUNT SEMUA SISWA (MASTER DATA)
      * ==========================================================
      */
+<<<<<<< HEAD
     public function getAllSiswaPaginated($offset, $limit, $keyword = null) {
         $sql = 'SELECT * FROM ' . $this->table;
         if (!empty($keyword)) {
@@ -99,8 +100,38 @@ class Siswa_model {
         }
         $result = $this->db->single();
         return $result ? (int)$result['total'] : 0;
+=======
+   public function getAllSiswaPaginated($offset, $limit, $keyword = null) {
+    $sql = 'SELECT id, id_siswa, nama, jenis_kelamin, no_hp FROM ' . $this->table;
+    if (!empty($keyword)) {
+        // Perubahan di sini: tambahkan 'jenis_kelamin' dan 'no_hp' ke klausa WHERE
+        $sql .= ' WHERE nama LIKE :keyword OR id_siswa LIKE :keyword OR jenis_kelamin LIKE :keyword OR no_hp LIKE :keyword';
+>>>>>>> d91e78e571d94349aa3d4bebddb2d5d66b3b0cbd
     }
+    $sql .= ' ORDER BY nama ASC LIMIT :limit OFFSET :offset';
     
+    $this->db->query($sql);
+    if (!empty($keyword)) {
+        $this->db->bind(':keyword', '%' . $keyword . '%');
+    }
+    $this->db->bind(':limit', $limit, PDO::PARAM_INT);
+    $this->db->bind(':offset', $offset, PDO::PARAM_INT);
+    return $this->db->resultSet();
+}
+
+public function countAllSiswa($keyword = null) {
+    $sql = 'SELECT COUNT(id) as total FROM ' . $this->table;
+    if (!empty($keyword)) {
+        // Perubahan di sini: tambahkan 'jenis_kelamin' dan 'no_hp' ke klausa WHERE
+        $sql .= ' WHERE nama LIKE :keyword OR id_siswa LIKE :keyword OR jenis_kelamin LIKE :keyword OR no_hp LIKE :keyword';
+    }
+    $this->db->query($sql);
+    if (!empty($keyword)) {
+        $this->db->bind(':keyword', '%' . $keyword . '%');
+    }
+    $result = $this->db->single();
+    return $result ? (int)$result['total'] : 0;
+}
     /**
      * ==========================================================
      * FUNGSI GET SISWA BY ID
@@ -259,8 +290,13 @@ class Siswa_model {
     public function getSiswaByKelasIdPaginated($kelasId, $offset, $limit, $keyword = null) {
         $sql = 'SELECT * FROM ' . $this->table . ' WHERE kelas_id = :kelas_id';
         if (!empty($keyword)) {
+<<<<<<< HEAD
             $sql .= ' AND (nama LIKE :keyword OR id_siswa LIKE :keyword)';
         }
+=======
+    $sql .= ' AND (nama LIKE :keyword OR id_siswa LIKE :keyword OR jenis_kelamin LIKE :keyword OR no_hp LIKE :keyword)';
+}
+>>>>>>> d91e78e571d94349aa3d4bebddb2d5d66b3b0cbd
         $sql .= ' ORDER BY nama ASC LIMIT :limit OFFSET :offset';
         
         $this->db->query($sql);
@@ -276,8 +312,13 @@ class Siswa_model {
     public function countSiswaByKelasId($kelasId, $keyword = null) {
         $sql = 'SELECT COUNT(id) as total FROM ' . $this->table . ' WHERE kelas_id = :kelas_id';
         if (!empty($keyword)) {
+<<<<<<< HEAD
             $sql .= ' AND (nama LIKE :keyword OR id_siswa LIKE :keyword)';
         }
+=======
+    $sql .= ' AND (nama LIKE :keyword OR id_siswa LIKE :keyword OR jenis_kelamin LIKE :keyword OR no_hp LIKE :keyword)';
+}
+>>>>>>> d91e78e571d94349aa3d4bebddb2d5d66b3b0cbd
         $this->db->query($sql);
         $this->db->bind(':kelas_id', $kelasId, PDO::PARAM_INT);
         if (!empty($keyword)) {
@@ -383,4 +424,30 @@ class Siswa_model {
         return $this->db->rowCount();
     }
 
+<<<<<<< HEAD
 }
+=======
+
+    /**
+     * ==========================================================
+     * FUNGSI MENGELUARKAN SISWA DARI KELAS SECARA MASSAL
+     * ==========================================================
+     */
+    public function removeSiswaFromKelasMassal($ids) {
+        if (empty($ids)) {
+            return 0;
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        
+        $query = "UPDATE " . $this->table . " SET kelas_id = NULL WHERE id IN ({$placeholders})";
+        
+        $this->db->query($query);
+        foreach ($ids as $k => $id) {
+            $this->db->bind($k + 1, $id);
+        }
+        $this->db->execute();
+        return $this->db->rowCount();
+    }
+}
+
+>>>>>>> d91e78e571d94349aa3d4bebddb2d5d66b3b0cbd
