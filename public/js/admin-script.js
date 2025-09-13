@@ -1,3 +1,19 @@
+// ManajemenLabPraktikum/public/js/admin-script.js
+
+// Fungsi showDeleteModal dipindahkan ke sini, di luar DOMContentLoaded
+function showDeleteModal(element) {
+    const siswaId = element.dataset.id;
+    const deleteModal = document.getElementById('deleteModal');
+    
+    if (deleteModal) {
+        const confirmDeleteLink = deleteModal.querySelector('#confirmDeleteLink');
+        if (confirmDeleteLink) {
+            confirmDeleteLink.href = `${BASEURL}/admin/hapusSiswaDariKelas/${siswaId}`;
+            deleteModal.classList.add('active');
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
     console.log('admin-script.js dimuat.');
@@ -89,18 +105,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * =================================================================
-     * FUNGSI PENGATURAN UNTUK TIAP TAB PENGGUNA
+     * FUNGSI PENGATURAN UNTUK TIAP HALAMAN ADMIN
      * =================================================================
      */
-
-    function setupStaffTab() {
+    function setupManajemenPenggunaPage() {
+        console.log('DEBUG: setupManajemenPenggunaPage() dijalankan.');
+        
         setupModal('staffModal', 'addStaffBtn', { formId: 'staffForm', actionUrl: '/admin/tambah-staff', title: 'Tambah Staff' });
         setupModal('importStaffModal', 'importStaffBtn');
         setupBulkDelete('bulkDeleteStaffForm', 'selectAllStaff', 'row-checkbox-staff', 'bulkDeleteStaffBtn');
 
+        setupModal('guruModal', 'addGuruBtn', { formId: 'guruForm', actionUrl: '/admin/tambah-guru', title: 'Tambah Guru' });
+        setupModal('importGuruModal', 'importGuruBtn');
+        setupBulkDelete('bulkDeleteGuruForm', 'selectAllGuru', 'row-checkbox-guru', 'bulkDeleteGuruBtn');
+
+        setupModal('siswaModal', 'addSiswaBtn', { formId: 'siswaForm', actionUrl: '/admin/tambah-siswa', title: 'Tambah Siswa' });
+        setupModal('importSiswaModal', 'importSiswaBtn');
+        setupBulkDelete('bulkDeleteSiswaForm', 'selectAllSiswa', 'row-checkbox-siswa', 'bulkDeleteSiswaBtn');
+
         const staffTableBody = document.getElementById('staffTableBody');
+        const guruTableBody = document.getElementById('guruTableBody');
+        const siswaTableBody = document.getElementById('siswaTableBody');
+        const akunTableBody = document.getElementById('akunTableBody');
         const deleteModal = document.getElementById('deleteModal');
         const staffModal = document.getElementById('staffModal');
+        const guruModal = document.getElementById('guruModal');
+        const siswaModal = document.getElementById('siswaModal');
+        const ubahPasswordModal = document.getElementById('ubahPasswordModal');
 
         if (staffTableBody) {
             staffTableBody.addEventListener('click', function(event) {
@@ -134,17 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
-    }
-
-    function setupGuruTab() {
-        setupModal('guruModal', 'addGuruBtn', { formId: 'guruForm', actionUrl: '/admin/tambah-guru', title: 'Tambah Guru' });
-        setupModal('importGuruModal', 'importGuruBtn');
-        setupBulkDelete('bulkDeleteGuruForm', 'selectAllGuru', 'row-checkbox-guru', 'bulkDeleteGuruBtn');
         
-        const guruTableBody = document.getElementById('guruTableBody');
-        const deleteModal = document.getElementById('deleteModal');
-        const guruModal = document.getElementById('guruModal');
-
         if (guruTableBody) {
             guruTableBody.addEventListener('click', function(event) {
                 const target = event.target;
@@ -177,17 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
-    }
-    
-    function setupSiswaTab() {
-        setupModal('siswaModal', 'addSiswaBtn', { formId: 'siswaForm', actionUrl: '/admin/tambah-siswa', title: 'Tambah Siswa' });
-        setupModal('importSiswaModal', 'importSiswaBtn');
-        setupBulkDelete('bulkDeleteSiswaForm', 'selectAllSiswa', 'row-checkbox-siswa', 'bulkDeleteSiswaBtn');
 
-        const siswaTableBody = document.getElementById('siswaTableBody');
-        const deleteModal = document.getElementById('deleteModal');
-        const siswaModal = document.getElementById('siswaModal');
-        
         if (siswaTableBody) {
             siswaTableBody.addEventListener('click', function(event) {
                 const target = event.target;
@@ -232,11 +243,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
-    }
-    
-    function setupAkunTab() {
-        const akunTableBody = document.getElementById('akunTableBody');
-        const ubahPasswordModal = document.getElementById('ubahPasswordModal');
         
         if (akunTableBody) {
              akunTableBody.addEventListener('click', function(event) {
@@ -256,6 +262,155 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function setupManajemenBarangPage() {
+        console.log('DEBUG: setupManajemenBarangPage() dijalankan.');
+
+        // 1. Setup modal untuk Tambah Barang
+        setupModal('itemModal', 'addItemBtn', { 
+            formId: 'itemForm', 
+            actionUrl: '/admin/tambah-barang', 
+            title: 'Tambah Barang Baru' 
+        });
+        
+        // 2. Setup modal untuk Import Barang (BARU)
+        setupModal('importItemModal', 'importItemBtn');
+
+        const itemTable = document.querySelector('#itemTable tbody');
+        const itemModal = document.getElementById('itemModal');
+        const itemForm = document.getElementById('itemForm');
+        const itemModalTitle = itemModal.querySelector('.modal-title');
+        const deleteModal = document.getElementById('deleteModal');
+
+        if (!itemTable) return;
+
+        // 3. Setup listener untuk tombol-tombol aksi di dalam tabel
+        itemTable.addEventListener('click', (event) => {
+            const target = event.target.closest('button, a');
+            if (!target) return;
+
+            // Logika untuk tombol View
+            if (target.matches('.view-btn')) {
+                const itemId = target.dataset.id;
+                window.location.href = `${BASEURL}/admin/barang/detail/${itemId}`;
+            }
+
+            // Logika untuk tombol Edit
+            if (target.matches('.edit-btn')) {
+                const itemId = target.dataset.id;
+                
+                itemModalTitle.textContent = 'Ubah Data Barang';
+                itemForm.action = `${BASEURL}/admin/ubah-barang`;
+
+                fetch(`${BASEURL}/admin/get-barang-by-id/${itemId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        itemForm.querySelector('#itemId').value = data.id;
+                        itemForm.querySelector('#kode_barang').value = data.kode_barang;
+                        itemForm.querySelector('#nama_barang').value = data.nama_barang;
+                        itemForm.querySelector('#jumlah').value = data.jumlah;
+                        itemForm.querySelector('#kondisi').value = data.kondisi;
+                        itemForm.querySelector('#lokasi_penyimpanan').value = data.lokasi_penyimpanan;
+                        itemForm.querySelector('#tanggal_pembelian').value = data.tanggal_pembelian;
+                        // Simpan nama gambar lama untuk diproses di PHP
+                        itemForm.querySelector('#gambarLama').value = data.gambar;
+                        itemModal.classList.add('active');
+                    })
+                    .catch(error => console.error('Error fetching item data:', error));
+            }
+
+            // Logika untuk tombol Delete
+            if (target.matches('.delete-btn')) {
+                const itemId = target.dataset.id;
+                const confirmDeleteLink = deleteModal.querySelector('#confirmDeleteLink');
+                confirmDeleteLink.href = `${BASEURL}/admin/hapus-barang/${itemId}`;
+                deleteModal.classList.add('active');
+            }
+        });
+    }
+
+    function setupDetailKelasPage() {
+        console.log('DEBUG: setupDetailKelasPage() dijalankan.');
+        
+        setupModal('assignSiswaModal', 'addSiswaBtn', { formId: 'assignSiswaForm', actionUrl: '/admin/assignSiswaToKelas', title: 'Tambahkan Siswa ke Kelas' });
+        setupModal('importSiswaModal', 'importSiswaBtn', { formId: 'importSiswaForm', actionUrl: '/admin/importSiswaKeKelas', title: 'Import Siswa' });
+        setupBulkDelete('bulkDeleteSiswaForm', 'selectAllSiswa', 'row-checkbox-siswa', 'bulkDeleteSiswaBtn');
+        
+        const siswaTableBody = document.querySelector('tbody');
+        const deleteModal = document.getElementById('deleteModal');
+        const editStatusModal = document.getElementById('editSiswaStatusModal'); // Ambil modal baru
+
+        if (siswaTableBody) {
+            siswaTableBody.addEventListener('click', function(event) {
+                const target = event.target.closest('button, a');
+                if (!target) return;
+
+                // Logika Hapus Tunggal (dari kelas)
+                if (target.matches('.delete-siswa-btn')) {
+                    event.preventDefault();
+                    const siswaId = target.dataset.id;
+                    const confirmDeleteLink = deleteModal.querySelector('#confirmDeleteLink');
+                    if (confirmDeleteLink) {
+                        confirmDeleteLink.href = `${BASEURL}/admin/hapusSiswaDariKelas/${siswaId}`;
+                        deleteModal.classList.add('active');
+                    }
+                }
+
+                // LOGIKA BARU: Tombol Edit Status
+                if (target.matches('.edit-status-btn')) {
+                    event.preventDefault();
+                    const siswaId = target.dataset.id;
+                    const siswaNama = target.dataset.nama;
+                    const currentStatus = target.dataset.status;
+
+                    if (editStatusModal) {
+                        editStatusModal.querySelector('#editStatusSiswaId').value = siswaId;
+                        editStatusModal.querySelector('#namaSiswaStatus').textContent = siswaNama;
+                        editStatusModal.querySelector('#status_siswa').value = currentStatus;
+                        editStatusModal.classList.add('active');
+                    }
+                }
+            });
+        }
+
+        const searchUnassignedInput = document.getElementById('searchUnassignedSiswaInput');
+        const siswaSelect = document.getElementById('siswa_id_select');
+
+        if (searchUnassignedInput && siswaSelect) {
+            let timeout = null;
+            
+            searchUnassignedInput.addEventListener('input', (e) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    const keyword = e.target.value.trim();
+                    
+                    fetch(`${BASEURL}/admin/searchUnassignedSiswa?keyword=${encodeURIComponent(keyword)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            siswaSelect.innerHTML = '<option value="">-- Pilih Siswa --</option>';
+
+                            if (data.length > 0) {
+                                data.forEach(siswa => {
+                                    const option = document.createElement('option');
+                                    option.value = siswa.id;
+                                    option.textContent = `${siswa.nama} (NIS: ${siswa.id_siswa})`;
+                                    siswaSelect.appendChild(option);
+                                });
+                            } else {
+                                const option = document.createElement('option');
+                                option.value = '';
+                                option.disabled = true;
+                                option.textContent = 'Tidak ada siswa yang ditemukan.';
+                                siswaSelect.appendChild(option);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching search results:', error);
+                        });
+                }, 500);
+            });
+        }
+    }
+
 
     /**
      * =================================================================
@@ -264,18 +419,16 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     
     const currentPath = window.location.pathname;
-    const tabLinksWrapper = document.querySelector('.tab-links-wrapper');
 
-    if (tabLinksWrapper) {
-        if (currentPath.includes('/admin/pengguna/staff')) {
-            setupStaffTab();
-        } else if (currentPath.includes('/admin/pengguna/guru')) {
-            setupGuruTab();
-        } else if (currentPath.includes('/admin/pengguna/siswa')) {
-            setupSiswaTab();
-        } else if (currentPath.includes('/admin/pengguna/akun')) {
-            setupAkunTab();
-        }
+    if (currentPath.includes('/admin/pengguna')) {
+        setupManajemenPenggunaPage();
+    } else if (currentPath.includes('/admin/kelas') && !currentPath.includes('/admin/detailKelas')) {
+        setupManajemenKelasPage();
+    } else if (currentPath.includes('/admin/detailKelas')) {
+        setupDetailKelasPage();
+    }
+    else if (currentPath.includes('/admin/barang')) {
+        setupManajemenBarangPage();
     }
 
     const adminNavs = { 'dashboard': 'nav-dashboard', 'pengguna': 'nav-pengguna', 'barang': 'nav-barang', 'kelas': 'nav-kelas', 'laporan': 'nav-laporan', 'profile': 'nav-profile' };
@@ -305,5 +458,5 @@ document.addEventListener('DOMContentLoaded', () => {
     setupStandardSearch('searchGuruForm');
     setupStandardSearch('searchSiswaForm');
     setupStandardSearch('searchAkunForm');
-
+    setupStandardSearch('searchKelasForm');
 });

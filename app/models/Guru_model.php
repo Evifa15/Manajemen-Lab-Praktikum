@@ -7,6 +7,18 @@ class Guru_model {
     public function __construct() {
         $this->db = new Database;
     }
+    
+    /**
+     * =================================================================
+     * FUNGSI GET SEMUA GURU (TANPA PAGINASI/PENCARIAN)
+     * =================================================================
+     * Digunakan untuk mengisi dropdown di form Tambah/Ubah Kelas.
+     */
+    public function getAllGuru() {
+        $this->db->query('SELECT id, nip, nama FROM ' . $this->table . ' ORDER BY nama ASC');
+        return $this->db->resultSet();
+    }
+
 
     /**
      * =================================================================

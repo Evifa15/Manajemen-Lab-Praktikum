@@ -20,6 +20,15 @@
                         <option value="rusak berat" <?= ($data['filters']['kondisi'] ?? '') == 'rusak berat' ? 'selected' : ''; ?>>Rusak Berat</option>
                     </select>
                 </div>
+                
+                <div class="filter-container">
+                    <select name="filter_status" onchange="this.form.submit()">
+                        <option value="">Semua Status</option>
+                        <option value="Tersedia" <?= ($data['filters']['status'] ?? '') == 'Tersedia' ? 'selected' : ''; ?>>Tersedia</option>
+                        <option value="Terbatas" <?= ($data['filters']['status'] ?? '') == 'Terbatas' ? 'selected' : ''; ?>>Terbatas</option>
+                        <option value="Tidak Tersedia" <?= ($data['filters']['status'] ?? '') == 'Tidak Tersedia' ? 'selected' : ''; ?>>Tidak Tersedia</option>
+                    </select>
+                </div>
             </form>
 
             <div class="actions-container">
@@ -35,7 +44,8 @@
                         <th>Nama Barang</th>
                         <th>Jumlah Stok</th>
                         <th>Kondisi</th>
-                        <th>Status</th> <th>Aksi</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -72,7 +82,8 @@
             <?php
                 $queryParams = http_build_query([
                     'search' => $data['filters']['keyword'] ?? '',
-                    'filter_kondisi' => $data['filters']['kondisi'] ?? ''
+                    'filter_kondisi' => $data['filters']['kondisi'] ?? '',
+                    'filter_status' => $data['filters']['status'] ?? ''
                 ]);
             ?>
             <a href="<?= BASEURL ?>/admin/barang/<?= max(1, $data['halaman_aktif'] - 1) ?>?<?= $queryParams ?>" class="pagination-btn <?= ($data['halaman_aktif'] <= 1) ? 'disabled' : '' ?>">Sebelumnya</a>
@@ -119,14 +130,22 @@
                     </div>
                 </div>
                 <div class="form-row">
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select id="status" name="status" required>
+                            <option value="Tersedia">Tersedia</option>
+                            <option value="Terbatas">Terbatas</option>
+                            <option value="Tidak Tersedia">Tidak Tersedia</option>
+                        </select>
+                    </div>
                      <div class="form-group">
                         <label for="lokasi_penyimpanan">Lokasi Penyimpanan</label>
                         <input type="text" id="lokasi_penyimpanan" name="lokasi_penyimpanan">
                     </div>
-                    <div class="form-group">
-                        <label for="tanggal_pembelian">Tanggal Pembelian</label>
-                        <input type="date" id="tanggal_pembelian" name="tanggal_pembelian">
-                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="tanggal_pembelian">Tanggal Pembelian</label>
+                    <input type="date" id="tanggal_pembelian" name="tanggal_pembelian">
                 </div>
                  <div class="form-group">
                     <label for="gambar">Gambar (Opsional)</label>
@@ -136,7 +155,7 @@
             </form>
         </div>
     </div>
-
+    
     <div id="deleteModal" class="modal">
         <div class="modal-content delete-modal">
             <span class="close-button">&times;</span>

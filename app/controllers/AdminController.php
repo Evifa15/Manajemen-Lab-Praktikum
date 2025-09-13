@@ -16,7 +16,6 @@ class AdminController {
      * =================================================================
      * HALAMAN UTAMA (DASHBOARD)
      * =================================================================
-     * Menampilkan halaman dashboard utama untuk admin.
      */
     public function index() {
         $data = [ 'title' => 'Dashboard Admin' ];
@@ -92,9 +91,159 @@ class AdminController {
      * HALAMAN MANAJEMEN BARANG
      * =================================================================
      */
-    public function manajemenBarang($halaman = 1) {
-        $data = [ 'title' => 'Manajemen Barang', 'filters' => [] ];
+     public function manajemenBarang($halaman = 1) {
+        $barangModel = new Barang_model();
+        
+        $halaman = max(1, (int)$halaman);
+        $limit = 10;
+        $offset = ($halaman - 1) * $limit;
+
+        $filters = [
+            'keyword' => $_GET['search'] ?? null,
+            'kondisi' => $_GET['filter_kondisi'] ?? null,
+            'status' => $_GET['filter_status'] ?? null
+        ];
+
+        $items = $barangModel->getBarangPaginated($offset, $limit, $filters);
+        $totalBarang = $barangModel->countAllBarang($filters);
+        $totalHalaman = ceil($totalBarang / $limit);
+
+        $data = [
+            'title' => 'Manajemen Barang',
+            'items' => $items,
+            'total_halaman' => $totalHalaman,
+            'halaman_aktif' => $halaman,
+            'filters' => $filters
+        ];
+        
         $this->view('admin/manajemen_barang', $data);
+    } 
+    /**
+     * =================================================================
+     * PROSES TAMBAH BARANG BARU
+     * =================================================================
+     */
+    public function tambahBarang() {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            // --- LOGIKA UPLOAD GAMBAR ---
+            $namaGambar = 'images.png'; // Default jika tidak ada gambar
+            if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] === UPLOAD_ERR_OK) {
+                $file = $_FILES['gambar'];
+                $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                $namaGambarBaru = uniqid() . '.' . $ext;
+                $targetDir = APP_ROOT . '/public/img/barang/';
+                
+                if (move_uploaded_file($file['tmp_name'], $targetDir . $namaGambarBaru)) {
+                    $namaGambar = $namaGambarBaru;
+                }
+            }
+            // --- AKHIR LOGIKA UPLOAD GAMBAR ---
+
+            $status = ($_POST['jumlah'] > 0) ? 'Tersedia' : 'Tidak Tersedia';
+
+            $data = [
+                'kode_barang' => $_POST['kode_barang'],
+                'nama_barang' => $_POST['nama_barang'],
+                'jumlah' => $_POST['jumlah'],
+                'kondisi' => $_POST['kondisi'],
+                'lokasi_penyimpanan' => $_POST['lokasi_penyimpanan'],
+                'tanggal_pembelian' => $_POST['tanggal_pembelian'],
+                'gambar' => $namaGambar,
+                'status' => $status
+            ];
+            
+            $barangModel = new Barang_model();
+            if ($barangModel->tambahBarang($data) > 0) {
+                Flasher::setFlash('Berhasil!', 'Data barang berhasil ditambahkan.', 'success');
+            } else {
+                Flasher::setFlash('Gagal!', 'Gagal menambahkan data barang.', 'danger');
+            }
+        }
+        header('Location: ' . BASEURL . '/admin/barang');
+        exit;
+    }
+    
+    /**
+     * =================================================================
+     * PROSES UPDATE BARANG
+     * =================================================================
+     */
+    public function ubahBarang() {
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        $barangModel = new Barang_model();
+        $data = $_POST;
+        $data['gambar'] = $_POST['gambar_lama'];
+
+        // Logika upload gambar baru
+        if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['gambar'];
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $namaGambarBaru = uniqid() . '.' . $ext;
+            $targetDir = APP_ROOT . '/public/img/barang/';
+
+            if (move_uploaded_file($file['tmp_name'], $targetDir . $namaGambarBaru)) {
+                $data['gambar'] = $namaGambarBaru;
+                // Hapus gambar lama jika ada dan bukan gambar default
+                if ($data['gambar_lama'] && $data['gambar_lama'] !== 'images.png') {
+                    @unlink($targetDir . $data['gambar_lama']);
+                }
+            }
+        }
+
+        $result = $barangModel->updateBarang($data);
+        if ($result > 0) {
+            Flasher::setFlash('Berhasil!', 'Data barang berhasil diubah.', 'success');
+        } else if ($result === 0) {
+            Flasher::setFlash('Info', 'Tidak ada perubahan data yang disimpan.', 'danger');
+        } else {
+            Flasher::setFlash('Gagal!', 'Terjadi kesalahan saat mengubah data.', 'danger');
+        }
+    }
+    header('Location: ' . BASEURL . '/admin/barang');
+    exit;
+}
+
+    /**
+     * =================================================================
+     * PROSES HAPUS BARANG
+     * =================================================================
+     */
+    public function hapusBarang($id) {
+        $barangModel = new Barang_model();
+        if ($barangModel->deleteBarang($id) > 0) {
+            Flasher::setFlash('Berhasil!', 'Data barang berhasil dihapus.', 'success');
+        } else {
+            Flasher::setFlash('Gagal!', 'Gagal menghapus data barang.', 'danger');
+        }
+        header('Location: ' . BASEURL . '/admin/barang');
+        exit;
+    }
+    
+    /**
+     * =================================================================
+     * ENDPOINT AJAX UNTUK MENGAMBIL DATA BARANG BY ID
+     * =================================================================
+     */
+    public function getBarangById($id) {
+        header('Content-Type: application/json');
+        $barangModel = new Barang_model();
+        $barang = $barangModel->getBarangById($id);
+        echo json_encode($barang);
+        exit();
+    }
+    
+    /**
+     * =================================================================
+     * MENAMPILKAN HALAMAN DETAIL BARANG
+     * =================================================================
+     */
+    public function detailBarang($id) {
+        $barangModel = new Barang_model();
+        $data = [
+            'title' => 'Detail Barang',
+            'item' => $barangModel->getBarangById($id)
+        ];
+        $this->view('admin/barang/detail', $data);
     }
     
     /**
@@ -103,10 +252,180 @@ class AdminController {
      * =================================================================
      */
     public function manajemenKelas($halaman = 1) {
-        $data = [ 'title' => 'Manajemen Kelas', 'all_guru' => [] ];
+        $halaman = max(1, (int)$halaman);
+        $limit = 10;
+        $offset = ($halaman - 1) * $limit;
+        $keyword = $_GET['search_kelas'] ?? null;
+
+        $kelasModel = new Kelas_model();
+        $guruModel = new Guru_model();
+
+        $data['title'] = 'Manajemen Kelas';
+        $data['all_guru'] = $guruModel->getAllGuru();
+        $data['kelas'] = $kelasModel->getKelasPaginated($offset, $limit, $keyword);
+        $data['total_kelas'] = $kelasModel->countAllKelas($keyword);
+        $data['total_halaman'] = ceil($data['total_kelas'] / $limit);
+        $data['halaman_aktif'] = $halaman;
+        $data['search_term_kelas'] = $keyword;
+        
         $this->view('admin/manajemen_kelas', $data);
     }
 
+    /**
+     * =================================================================
+     * PROSES TAMBAH KELAS
+     * =================================================================
+     */
+    public function tambahKelas() {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $kelasModel = new Kelas_model();
+
+            if (empty($_POST['wali_kelas_id'])) {
+                 Flasher::setFlash('Gagal!', 'Wali kelas tidak boleh kosong.', 'danger');
+            } elseif ($kelasModel->tambahKelas($_POST) > 0) {
+                Flasher::setFlash('Berhasil!', 'Data kelas berhasil ditambahkan.', 'success');
+            } else {
+                Flasher::setFlash('Gagal!', 'Gagal menambahkan kelas.', 'danger');
+            }
+        }
+        header('Location: ' . BASEURL . '/admin/kelas');
+        exit;
+    }
+
+    /**
+     * =================================================================
+     * PROSES IMPORT KELAS DARI FILE CSV
+     * =================================================================
+     */
+    public function importKelas() {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['file_import_kelas'])) {
+            $file = $_FILES['file_import_kelas'];
+
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                Flasher::setFlash('Gagal!', 'Terjadi error saat mengunggah file.', 'danger');
+            } elseif (strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)) != 'csv') {
+                Flasher::setFlash('Gagal!', 'Hanya file format .csv yang didukung.', 'danger');
+            } else {
+                $fileHandle = fopen($file['tmp_name'], 'r');
+                fgetcsv($fileHandle); // Lewati header
+
+                $guruModel = new Guru_model();
+                $allGuru = $guruModel->getAllGuru();
+                $guruMap = array_column($allGuru, 'id', 'nip');
+
+                $dataUntukImport = [];
+                $errors = [];
+                $line = 2;
+                while (($row = fgetcsv($fileHandle)) !== FALSE) {
+                    $nama_kelas = trim($row[0]);
+                    $nip_wali = trim($row[1]);
+
+                    if (empty($nama_kelas)) {
+                        $errors[] = "Baris {$line}: Nama kelas kosong.";
+                    } elseif (empty($nip_wali) || !isset($guruMap[$nip_wali])) {
+                        $errors[] = "Baris {$line}: NIP Wali Kelas '{$nip_wali}' tidak ditemukan.";
+                    } else {
+                        $dataUntukImport[] = [
+                            'nama_kelas' => $nama_kelas,
+                            'wali_kelas_id' => $guruMap[$nip_wali]
+                        ];
+                    }
+                    $line++;
+                }
+                fclose($fileHandle);
+
+                if (empty($errors)) {
+                    $kelasModel = new Kelas_model();
+                    $hasil = $kelasModel->tambahKelasBatch($dataUntukImport);
+                    
+                    if ($hasil['failed'] > 0) {
+                         Flasher::setFlash('Gagal!', "{$hasil['failed']} data kelas gagal diimpor.", 'danger');
+                    } else {
+                         Flasher::setFlash('Berhasil!', "{$hasil['success']} data kelas berhasil diimpor.", 'success');
+                    }
+
+                } else {
+                    $pesan = "Gagal mengimpor data kelas. <br> Detail: <br>" . implode('<br>', $errors);
+                    Flasher::setFlash('Proses Gagal', $pesan, 'danger');
+                }
+            }
+        } else {
+            Flasher::setFlash('Gagal!', 'Tidak ada file yang diunggah.', 'danger');
+        }
+
+        header('Location: ' . BASEURL . '/admin/kelas');
+        exit;
+    }
+    /**
+ * =================================================================
+ * PROSES IMPORT BARANG DARI FILE CSV (PERBAIKAN)
+ * =================================================================
+ */
+public function importBarang() {
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['file_import_barang'])) {
+        $file = $_FILES['file_import_barang'];
+
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            Flasher::setFlash('Gagal!', 'Terjadi error saat mengunggah file.', 'danger');
+        } elseif (strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)) != 'csv') {
+            Flasher::setFlash('Gagal!', 'Hanya file format .csv yang didukung.', 'danger');
+        } else {
+            $fileHandle = fopen($file['tmp_name'], 'r');
+            
+            // Perbaikan: Deteksi Delimiter secara Otomatis
+            $delimiter = ',';
+            if (fgets($fileHandle) && strpos(fgets($fileHandle), ';') !== false) {
+                 $delimiter = ';';
+            }
+            fseek($fileHandle, 0); // Reset pointer
+            fgetcsv($fileHandle, 0, $delimiter); // Lewati header dengan delimiter yang benar
+
+            $dataUntukImport = [];
+            $errors = [];
+            $line = 2;
+            while (($row = fgetcsv($fileHandle, 0, $delimiter)) !== FALSE) {
+                // Perbaikan: Cek jumlah kolom untuk menghindari format yang salah
+                if (count($row) < 7 || empty(trim($row[0]))) { 
+                    $errors[] = "Baris {$line}: Format data tidak lengkap atau Kode Barang kosong.";
+                } else {
+                    $dataUntukImport[] = [
+                        'kode_barang' => trim($row[0]),
+                        'nama_barang' => trim($row[1]),
+                        'jumlah' => trim($row[2]),
+                        'kondisi' => trim($row[3]),
+                        'status' => trim($row[4]),
+                        'lokasi_penyimpanan' => trim($row[5]),
+                        'tanggal_pembelian' => trim($row[6]),
+                        'gambar' => 'images.png'
+                    ];
+                }
+                $line++;
+            }
+            fclose($fileHandle);
+
+            if (empty($errors)) {
+                $barangModel = new Barang_model();
+                $hasil = $barangModel->importBarangBatch($dataUntukImport);
+                
+                if ($hasil['failed'] > 0) {
+                    $pesan = "{$hasil['success']} data berhasil diimpor, {$hasil['failed']} data gagal. <br> Detail Error: <br>" . implode('<br>', $hasil['errors']);
+                    Flasher::setFlash('Proses Selesai dengan Error', $pesan, 'danger');
+                } else {
+                    Flasher::setFlash('Berhasil!', "{$hasil['success']} data barang berhasil diimpor.", 'success');
+                }
+            } else {
+                $pesan = "Gagal mengimpor data barang. <br> Detail: <br>" . implode('<br>', $errors);
+                Flasher::setFlash('Proses Gagal', $pesan, 'danger');
+            }
+        }
+    } else {
+        Flasher::setFlash('Gagal!', 'Tidak ada file yang diunggah.', 'danger');
+    }
+
+    header('Location: ' . BASEURL . '/admin/barang');
+    exit;
+}
+    
     /**
      * =================================================================
      * HALAMAN LAPORAN & RIWAYAT
@@ -121,12 +440,8 @@ class AdminController {
      * =================================================================
      * PROSES TAMBAH STAFF BARU
      * =================================================================
-     * Menerima data dari form modal, mengirim ke model untuk disimpan,
-     * dan memberikan notifikasi (flash message).
      */
     public function tambahStaff() {
-        // $this->checkAuth(); // Diaktifkan nanti
-
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $staffModel = new Staff_model();
             
@@ -162,7 +477,6 @@ class AdminController {
      * =================================================================
      * FUNGSI VIEW LOADER
      * =================================================================
-     * Method ini bertugas untuk memuat file view beserta header dan footer.
      */
     public function view($view, $data = []) {
         extract($data);
@@ -176,7 +490,6 @@ class AdminController {
      * =================================================================
      * PROSES IMPORT STAFF DARI FILE CSV
      * =================================================================
-     * Menangani upload file CSV, mem-parsing datanya, dan mengirim ke model.
      */
     public function importStaff() {
         if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['file_import_staff'])) {
@@ -231,7 +544,7 @@ class AdminController {
         exit;
     }
 
-    /**
+/**
  * =================================================================
  * ENDPOINT AJAX UNTUK PENCARIAN STAFF
  * =================================================================
@@ -303,8 +616,6 @@ public function searchStaff() {
         exit;
     }
 
-    // Letakkan method ini di dalam class AdminController
-
     /**
      * =================================================================
      * PROSES TAMBAH GURU BARU
@@ -320,12 +631,9 @@ public function searchStaff() {
                 Flasher::setFlash('Gagal!', 'Gagal menambahkan guru. Pastikan NIP unik.', 'danger');
             }
         }
-        // Arahkan kembali ke halaman manajemen pengguna tab guru
         header('Location: ' . BASEURL . '/admin/pengguna/guru');
         exit;
     }
-
-    // Letakkan method ini di dalam class AdminController
 
     /**
      * =================================================================
@@ -381,8 +689,6 @@ public function searchStaff() {
         exit;
     }
 
-
-
     /**
      * =================================================================
      * ENDPOINT AJAX UNTUK PENCARIAN GURU
@@ -436,7 +742,6 @@ public function searchStaff() {
             $guruModel = new Guru_model();
             $result = $guruModel->updateGuru($_POST);
 
-            // Kondisi ini sekarang akan bekerja dengan benar
             if ($result > 0) {
                 Flasher::setFlash('Berhasil!', 'Data guru berhasil diubah.', 'success');
             } else if ($result === 0) {
@@ -499,18 +804,6 @@ public function searchStaff() {
             'staff' => $staffModel->getStaffById($id)
         ];
         $this->view('admin/staff/detail', $data);
-    }
-/**
-     * =================================================================
-     * ENDPOINT AJAX UNTUK MENGAMBIL DATA SISWA BY ID
-     * =================================================================
-     */
-    public function getSiswaById($id) {
-        header('Content-Type: application/json');
-        $siswaModel = new Siswa_model();
-        $siswa = $siswaModel->getSiswaById($id);
-        echo json_encode($siswa);
-        exit();
     }
 /**
      * =================================================================
@@ -697,9 +990,11 @@ public function searchStaff() {
         exit;
     }
     
-    // =================================================================
-    // PROSES UBAH PASSWORD AKUN
-    // =================================================================
+    /**
+     * =================================================================
+     * PROSES UBAH PASSWORD AKUN
+     * =================================================================
+     */
     public function ubahPasswordAkun() {
         if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id']) && isset($_POST['new_password'])) {
             $id = $_POST['id'];
@@ -725,13 +1020,258 @@ public function searchStaff() {
         exit;
     }
     
-    // --- Kumpulan method kosong untuk fitur yang belum dibuat ---
-    public function tambahBarang() {}
-    public function ubahBarang() {}
-    public function hapusBarang($id) {}
-    public function tambahKelas() {}
-    public function ubahKelas() {}
-    public function hapusKelas($id) {}
-    public function detailKelas() {}
+    /**
+     * =================================================================
+     * PROSES UBAH KELAS
+     * =================================================================
+     */
+    public function ubahKelas() {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $kelasModel = new Kelas_model();
+            if ($kelasModel->updateKelas($_POST) > 0) {
+                Flasher::setFlash('Berhasil!', 'Data kelas berhasil diubah.', 'success');
+            } else {
+                Flasher::setFlash('Gagal!', 'Gagal mengubah data kelas.', 'danger');
+            }
+        }
+        header('Location: ' . BASEURL . '/admin/kelas');
+        exit;
+    }
 
+    /**
+     * =================================================================
+     * ENDPOINT AJAX GET KELAS BY ID
+     * =================================================================
+     */
+    public function getKelasById($id) {
+        header('Content-Type: application/json');
+        $kelasModel = new Kelas_model();
+        $kelas = $kelasModel->getKelasById($id);
+        echo json_encode($kelas);
+        exit;
+    }
+
+    /**
+     * =================================================================
+     * PROSES HAPUS KELAS MASSAL
+     * =================================================================
+     */
+    public function hapusKelasMassal() {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && !empty($_POST['ids'])) {
+            $ids = $_POST['ids'];
+            $kelasModel = new Kelas_model();
+            $rowCount = $kelasModel->hapusKelasMassal($ids);
+            if ($rowCount > 0) {
+                Flasher::setFlash('Berhasil!', "{$rowCount} data kelas berhasil dihapus.", 'success');
+            } else {
+                Flasher::setFlash('Gagal!', 'Tidak ada data kelas yang dihapus.', 'danger');
+            }
+        } else {
+            Flasher::setFlash('Gagal!', 'Tidak ada data yang dipilih untuk dihapus.', 'danger');
+        }
+        header('Location: ' . BASEURL . '/admin/kelas');
+        exit;
+    }
+    
+    /**
+     * =================================================================
+     * MENAMPILKAN HALAMAN DETAIL KELAS
+     * =================================================================
+     */
+    public function detailKelas($kelasId, $halaman = 1) {
+        $kelasModel = new Kelas_model();
+        $siswaModel = new Siswa_model();
+    
+        $kelas = $kelasModel->getKelasById($kelasId);
+    
+        $limit = 10;
+        $halaman = max(1, (int)$halaman);
+        $offset = ($halaman - 1) * $limit;
+    
+        $siswa = [];
+        $totalSiswa = 0;
+        $totalHalaman = 1;
+        $searchTerm = null;
+    
+        if ($kelas) {
+            $searchTerm = $_GET['search'] ?? null;
+            $siswa = $siswaModel->getSiswaByKelasIdPaginated($kelas['id'], $offset, $limit, $searchTerm);
+            $totalSiswa = $siswaModel->countSiswaByKelasId($kelas['id'], $searchTerm);
+            $totalHalaman = ceil($totalSiswa / $limit);
+        }
+    
+        $data = [
+            'title' => 'Detail Kelas',
+            'kelas' => $kelas,
+            'siswa' => $siswa,
+            'total_halaman' => $totalHalaman,
+            'halaman_aktif' => (int)$halaman,
+            'search_term' => $searchTerm,
+            'unassigned_siswa' => $siswaModel->getUnassignedSiswa()
+        ];
+    
+        $this->view('admin/kelas/detail', $data);
+    }
+    
+    /**
+     * =================================================================
+     * ENDPOINT AJAX UNTUK PENCARIAN SISWA YANG BELUM ADA KELAS
+     * =================================================================
+     */
+      public function searchUnassignedSiswa() {
+        header('Content-Type: application/json');
+        $keyword = $_GET['keyword'] ?? null;
+        $siswaModel = new Siswa_model();
+        
+        $siswaData = $siswaModel->getUnassignedSiswaByKeyword($keyword);
+        
+        echo json_encode($siswaData);
+        exit();
+    }
+
+    /**
+     * =================================================================
+     * PROSES ASSIGN SISWA KE KELAS
+     * =================================================================
+     */
+    public function assignSiswaToKelas() {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['siswa_id']) && isset($_POST['kelas_id'])) {
+            $siswaModel = new Siswa_model();
+            $siswaId = $_POST['siswa_id'];
+            $kelasId = $_POST['kelas_id'];
+            
+            $rowCount = $siswaModel->assignSiswaToKelas($siswaId, $kelasId);
+            
+            if ($rowCount > 0) {
+                Flasher::setFlash('Berhasil!', 'Siswa berhasil ditambahkan ke kelas.', 'success');
+            } else {
+                Flasher::setFlash('Gagal!', 'Tidak ada siswa yang ditambahkan ke kelas. Mungkin siswa sudah memiliki kelas.', 'danger');
+            }
+        } else {
+            Flasher::setFlash('Gagal!', 'Permintaan tidak valid.', 'danger');
+        }
+        header('Location: ' . BASEURL . '/admin/detailKelas/' . $_POST['kelas_id']);
+        exit;
+    }
+    
+    /**
+     * =================================================================
+     * PROSES IMPORT SISWA KE KELAS (BARU)
+     * =================================================================
+     */
+    public function importSiswaKeKelas() {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['file_import_siswa']) && isset($_POST['kelas_id'])) {
+            $file = $_FILES['file_import_siswa'];
+            $kelasId = $_POST['kelas_id'];
+
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                Flasher::setFlash('Gagal!', 'Terjadi error saat mengunggah file.', 'danger');
+            } elseif (strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)) != 'csv') {
+                Flasher::setFlash('Gagal!', 'Hanya file format .csv yang didukung.', 'danger');
+            } else {
+                $fileHandle = fopen($file['tmp_name'], 'r');
+                fgetcsv($fileHandle); // Lewati baris header
+
+                $nises_to_find = [];
+                $line = 2;
+                while (($row = fgetcsv($fileHandle)) !== FALSE) {
+                    $nis = trim($row[0]);
+                    if (!empty($nis)) {
+                        $nises_to_find[] = $nis;
+                    }
+                    $line++;
+                }
+                fclose($fileHandle);
+                
+                if (!empty($nises_to_find)) {
+                    $siswaModel = new Siswa_model();
+                    $siswa_valid = $siswaModel->getSiswaByNisInBatch($nises_to_find);
+                    $found_nises = array_column($siswa_valid, 'id_siswa');
+                    
+                    $siswa_to_assign = array_column($siswa_valid, 'id');
+                    $rowCount = $siswaModel->assignSiswaBatchToKelas($siswa_to_assign, $kelasId);
+                    
+                    $not_found_nises = array_diff($nises_to_find, $found_nises);
+                    $not_found_message = '';
+                    if (!empty($not_found_nises)) {
+                         $not_found_message = 'Berikut adalah ID Siswa (NIS) yang tidak ditemukan: ' . implode(', ', $not_found_nises);
+                    }
+                    
+                    if ($rowCount > 0) {
+                        $message = "{$rowCount} siswa berhasil ditambahkan ke kelas.";
+                        if (!empty($not_found_message)) {
+                            $message .= "<br>" . $not_found_message;
+                        }
+                        Flasher::setFlash('Berhasil!', $message, 'success');
+                    } else if (!empty($not_found_message)) {
+                        Flasher::setFlash('Proses Gagal!', "Tidak ada siswa yang berhasil ditambahkan. <br>" . $not_found_message, 'danger');
+                    } else {
+                        Flasher::setFlash('Gagal!', 'File CSV kosong atau tidak memiliki data yang valid.', 'danger');
+                    }
+
+                } else {
+                    Flasher::setFlash('Gagal!', 'File CSV kosong atau tidak memiliki data yang valid.', 'danger');
+                }
+            }
+        } else {
+            Flasher::setFlash('Gagal!', 'Permintaan tidak valid.', 'danger');
+        }
+
+        header('Location: ' . BASEURL . '/admin/detailKelas/' . $_POST['kelas_id']);
+        exit;
+    }
+
+    /**
+     * =================================================================
+     * PROSES UPDATE STATUS SISWA (BARU)
+     * =================================================================
+     */
+    public function updateSiswaStatus() {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['siswa_id']) && isset($_POST['status'])) {
+            $siswaModel = new Siswa_model();
+            $siswaId = $_POST['siswa_id'];
+            $status = $_POST['status'];
+            $kelasId = $_POST['kelas_id'];
+
+            if ($siswaModel->updateStatusSiswa($siswaId, $status) > 0) {
+                Flasher::setFlash('Berhasil!', 'Status siswa berhasil diperbarui.', 'success');
+            } else {
+                Flasher::setFlash('Gagal!', 'Gagal memperbarui status siswa atau tidak ada perubahan.', 'danger');
+            }
+        } else {
+            Flasher::setFlash('Gagal!', 'Permintaan tidak valid.', 'danger');
+        }
+        
+        // Redirect kembali ke halaman detail kelas asal
+        header('Location: ' . BASEURL . '/admin/detailKelas/' . $kelasId);
+        exit;
+    }
+
+    /**
+     * =================================================================
+     * PROSES HAPUS SISWA DARI KELAS
+     * =================================================================
+     */
+    public function hapusSiswaDariKelas($siswaId) {
+        $siswaModel = new Siswa_model();
+        $siswa = $siswaModel->getSiswaById($siswaId);
+        
+        if (!$siswa) {
+            Flasher::setFlash('Gagal!', 'Siswa tidak ditemukan.', 'danger');
+            header('Location: ' . BASEURL . '/admin/kelas');
+            exit;
+        }
+
+        $kelasId = $siswa['kelas_id'];
+
+        if ($siswaModel->removeSiswaFromKelas($siswaId) > 0) {
+            Flasher::setFlash('Berhasil!', 'Siswa berhasil dikeluarkan dari kelas.', 'success');
+        } else {
+            Flasher::setFlash('Gagal!', 'Gagal mengeluarkan siswa dari kelas.', 'danger');
+        }
+
+        header('Location: ' . BASEURL . '/admin/detailKelas/' . $kelasId);
+        exit;
+    }
+  
 }

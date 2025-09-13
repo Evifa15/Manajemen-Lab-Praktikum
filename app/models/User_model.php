@@ -8,12 +8,12 @@ class User_model {
         $this->db = new Database;
     }
 
-    // --- Fungsi getUsersPaginated (Sudah Benar) ---
+    // --- FUNGSI DIPERBAIKI ---
     public function getUsersPaginated($offset, $limit, $filters = []) {
         $query = "SELECT 
-                    u.id, u.username, u.role,
+                    u.id, u.username, u.role, u.password,
                     CASE 
-                        WHEN u.role = 'admin' THEN a.id_admin
+                        WHEN u.role = 'admin' THEN a.id_staff
                         WHEN u.role = 'guru' THEN g.nip
                         WHEN u.role = 'siswa' THEN s.id_siswa
                     END AS id_pengguna,
@@ -24,7 +24,7 @@ class User_model {
                     END AS email
                 FROM 
                     {$this->table} u
-                LEFT JOIN admin a ON u.id = a.user_id AND u.role = 'admin'
+                LEFT JOIN staff a ON u.id = a.user_id AND u.role = 'admin'
                 LEFT JOIN guru g ON u.id = g.user_id AND u.role = 'guru'
                 LEFT JOIN siswa s ON u.id = s.user_id AND u.role = 'siswa'
                 WHERE 1=1"; 
@@ -32,7 +32,7 @@ class User_model {
         if (!empty($filters['keyword'])) {
             $query .= " AND (u.username LIKE :keyword OR 
                               (CASE 
-                                  WHEN u.role = 'admin' THEN a.id_admin
+                                  WHEN u.role = 'admin' THEN a.id_staff
                                   WHEN u.role = 'guru' THEN g.nip
                                   WHEN u.role = 'siswa' THEN s.id_siswa
                               END) LIKE :keyword)";
@@ -58,10 +58,10 @@ class User_model {
         return $this->db->resultSet();
     }
 
-    // --- Fungsi countAllUsers (Sudah Benar) ---
+    // --- FUNGSI DIPERBAIKI ---
     public function countAllUsers($filters = []) {
         $query = "SELECT COUNT(u.id) AS total FROM {$this->table} u
-                LEFT JOIN admin a ON u.id = a.user_id AND u.role = 'admin'
+                LEFT JOIN staff a ON u.id = a.user_id AND u.role = 'admin'
                 LEFT JOIN guru g ON u.id = g.user_id AND u.role = 'guru'
                 LEFT JOIN siswa s ON u.id = s.user_id AND u.role = 'siswa'
                 WHERE 1=1";
@@ -69,7 +69,7 @@ class User_model {
         if (!empty($filters['keyword'])) {
             $query .= " AND (u.username LIKE :keyword OR 
                               (CASE 
-                                  WHEN u.role = 'admin' THEN a.id_admin
+                                  WHEN u.role = 'admin' THEN a.id_staff
                                   WHEN u.role = 'guru' THEN g.nip
                                   WHEN u.role = 'siswa' THEN s.id_siswa
                               END) LIKE :keyword)";
@@ -235,11 +235,12 @@ class User_model {
         return $this->db->single();
     }
     
+    // --- FUNGSI DIPERBAIKI ---
     public function getUserDetailById($id) {
         $query = "SELECT 
                     u.id, u.username, u.role,
                     CASE 
-                        WHEN u.role = 'admin' THEN a.id_admin
+                        WHEN u.role = 'admin' THEN a.id_staff
                         WHEN u.role = 'guru' THEN g.nip
                         WHEN u.role = 'siswa' THEN s.id_siswa
                     END AS id_pengguna,
@@ -250,15 +251,16 @@ class User_model {
                     END AS email
                 FROM 
                     {$this->table} u
-                LEFT JOIN admin a ON u.id = a.user_id AND u.role = 'admin'
+                LEFT JOIN staff a ON u.id = a.user_id AND u.role = 'admin'
                 LEFT JOIN guru g ON u.id = g.user_id AND u.role = 'guru'
                 LEFT JOIN siswa s ON u.id = s.user_id AND u.role = 'siswa'
                 WHERE u.id = :id";
         
-        $this->db->query($query); // BENAR: Menggunakan panah
-        $this->db->bind(':id', $id); // BENAR: Menggunakan panah
-        return $this->db->single(); // BENAR: Menggunakan panah
+        $this->db->query($query);
+        $this->db->bind(':id', $id);
+        return $this->db->single();
     }
+
     public function changePassword($id, $newPassword) {
         $hashed_password = password_hash($newPassword, PASSWORD_DEFAULT);
         $query = 'UPDATE ' . $this->table . ' SET password = :password WHERE id = :id';

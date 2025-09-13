@@ -88,6 +88,9 @@ elseif ($controller === 'admin') {
     elseif ($method === 'detailGuru' && !empty($param1)) { $adminController->detailGuru($param1); }
     elseif ($method === 'hapus-guru-massal') { $adminController->hapusGuruMassal(); }
     elseif ($method === 'detailStaff' && !empty($param1)) { $adminController->detailStaff($param1); }
+    elseif ($method === 'assignSiswaToKelas') { $adminController->assignSiswaToKelas(); } 
+    elseif ($method === 'hapusSiswaDariKelas' && !empty($param1)) { $adminController->hapusSiswaDariKelas($param1); }
+    elseif ($method === 'updateSiswaStatus') { $adminController->updateSiswaStatus(); }
     // --- Manajemen Siswa ---
     elseif ($method === 'tambah-siswa') { $adminController->tambahSiswa(); }
     elseif ($method === 'ubah-siswa') { $adminController->ubahSiswa(); }
@@ -98,18 +101,18 @@ elseif ($controller === 'admin') {
     elseif ($method === 'detailSiswa' && !empty($param1)) { $adminController->detailSiswa($param1); }
     // --- Manajemen Barang ---
     elseif ($method === 'barang') {
-        if (isset($url_parts[2]) && $url_parts[2] === 'detail' && isset($url_parts[3])) {
-            $adminController->detailBarang($url_parts[3]);
-        } else {
-            $halaman = $url_parts[2] ?? 1;
-            $adminController->manajemenBarang($halaman);
-        }
+    if (isset($url_parts[2]) && $url_parts[2] === 'detail' && isset($url_parts[3])) {
+        $adminController->detailBarang($url_parts[3]);
+    } else {
+        $halaman = $url_parts[2] ?? 1;
+        $adminController->manajemenBarang($halaman);
     }
-    elseif ($method === 'tambah-barang') { $adminController->tambahBarang(); }
-    elseif ($method === 'ubah-barang') { $adminController->ubahBarang(); }
-    elseif ($method === 'hapus-barang' && !empty($param1)) { $adminController->hapusBarang($param1); }
-    elseif ($method === 'get-barang-by-id' && !empty($param1)) { $adminController->getBarangById($param1); } 
-    
+}
+elseif ($method === 'tambah-barang') { $adminController->tambahBarang(); }
+elseif ($method === 'ubah-barang') { $adminController->ubahBarang(); }
+elseif ($method === 'hapus-barang' && !empty($param1)) { $adminController->hapusBarang($param1); }
+elseif ($method === 'get-barang-by-id' && !empty($param1)) { $adminController->getBarangById($param1); } 
+elseif ($method === 'import-barang') { $adminController->importBarang(); } 
     // --- Import & Hapus Massal ---
     elseif ($method === 'import-kelas') { $adminController->importKelas(); }
     elseif ($method === 'import-guru') { $adminController->importGuru(); }
