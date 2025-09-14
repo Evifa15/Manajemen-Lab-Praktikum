@@ -45,10 +45,7 @@
                                         <input type="hidden" name="peminjaman_id" value="<?= $req['id']; ?>">
                                         <button type="submit" name="status" value="Disetujui" class="btn" style="background-color: #16A34A;">Setujui</button>
                                     </form>
-                                    <form action="<?= BASEURL; ?>/guru/proses-verifikasi" method="post" style="display:inline;">
-                                        <input type="hidden" name="peminjaman_id" value="<?= $req['id']; ?>">
-                                        <button type="submit" name="status" value="Ditolak" class="btn btn-danger">Tolak</button>
-                                    </form>
+                                    <button type="button" class="btn btn-danger open-modal-tolak-btn" data-id="<?= $req['id']; ?>">Tolak</button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -77,3 +74,46 @@
         <?php endif; ?>
     </div>
 </div>
+
+<div id="tolakModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <span class="close-button">&times;</span>
+        <h3 class="modal-title">Berikan Alasan Penolakan</h3>
+        <p style="color: #666; margin-bottom: 20px;">Silakan isi alasan penolakan agar siswa dapat melihatnya.</p>
+        <form id="tolakForm" method="POST" action="<?= BASEURL; ?>/guru/proses-verifikasi">
+            <input type="hidden" id="peminjamanIdTolak" name="peminjaman_id">
+            <input type="hidden" name="status" value="Ditolak">
+            <div class="form-group">
+                <label for="alasan-tolak">Alasan Penolakan</label>
+                <textarea id="alasan-tolak" name="keterangan" rows="4" placeholder="Contoh: Barang tidak dapat dipinjam karena stok tidak sesuai atau sedang dalam perbaikan." required></textarea>
+            </div>
+            <button type="submit">Konfirmasi Penolakan</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tolakModal = document.getElementById('tolakModal');
+        const openModalBtns = document.querySelectorAll('.open-modal-tolak-btn');
+        const closeBtn = tolakModal.querySelector('.close-button');
+        const peminjamanIdInput = document.getElementById('peminjamanIdTolak');
+        
+        openModalBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                peminjamanIdInput.value = btn.dataset.id;
+                tolakModal.classList.add('active');
+            });
+        });
+
+        closeBtn.addEventListener('click', () => {
+            tolakModal.classList.remove('active');
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target === tolakModal) {
+                tolakModal.classList.remove('active');
+            }
+        });
+    });
+</script>

@@ -200,28 +200,30 @@ class SiswaController {
     /**
      * Menampilkan riwayat peminjaman barang untuk siswa yang sedang login.
      */
-    public function riwayatPeminjaman($halaman = 1) {
-        $this->checkAuth();
-        $peminjamanModel = new Peminjaman_model();
-        
-        $halaman = max(1, (int)$halaman);
-        $limit = 10;
-        $offset = ($halaman - 1) * $limit;
-        $userId = $_SESSION['user_id'];
-        
-        $totalRiwayat = $peminjamanModel->countHistoryByUserId($userId);
-        $totalHalaman = ceil($totalRiwayat / $limit);
-        
-        $data = [
-            'title' => 'Riwayat Peminjaman',
-            'username' => $_SESSION['username'],
-            'history' => $peminjamanModel->getHistoryByUserId($userId, $offset, $limit),
-            'total_halaman' => $totalHalaman,
-            'halaman_aktif' => $halaman
-        ];
-        
-        $this->view('siswa/riwayat_peminjaman', $data);
-    }
+   public function riwayatPeminjaman($halaman = 1) {
+    $this->checkAuth();
+    $peminjamanModel = new Peminjaman_model();
+
+    $halaman = max(1, (int)$halaman);
+    $limit = 10;
+    $offset = ($halaman - 1) * $limit;
+    $userId = $_SESSION['user_id'];
+    $keyword = $_GET['search'] ?? null;
+
+    $totalRiwayat = $peminjamanModel->countHistoryByUserId($userId, $keyword);
+    $totalHalaman = ceil($totalRiwayat / $limit);
+
+    $data = [
+        'title' => 'Riwayat Peminjaman',
+        'username' => $_SESSION['username'],
+        'history' => $peminjamanModel->getHistoryByUserId($userId, $offset, $limit, $keyword),
+        'total_halaman' => $totalHalaman,
+        'halaman_aktif' => $halaman,
+        'keyword' => $keyword
+    ];
+
+    $this->view('siswa/riwayat_peminjaman', $data);
+}
     
     /**
      * Menampilkan halaman profil siswa.

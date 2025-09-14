@@ -107,4 +107,41 @@ class GuruController {
         require_once '../app/views/' . $view . '.php';
         require_once '../app/views/layouts/guru_footer.php';
     }
+    public function prosesVerifikasi() {
+        $this->checkAuth();
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['peminjaman_id']) && isset($_POST['status'])) {
+            $peminjamanModel = new Peminjaman_model();
+            $barangModel = new Barang_model();
+            $peminjamanId = $_POST['peminjaman_id'];
+            $status = $_POST['status'];
+            $keterangan = $_POST['keterangan'] ?? null;
+            
+            $peminjaman = $peminjamanModel->getPeminjamanById($peminjamanId);
+
+            if ($peminjaman && $peminjaman['status'] == 'Menunggu Verifikasi') {
+                if ($status === 'Ditolak' && empty($keterangan)) {
+                    Flasher::setFlash('Gagal!', 'Alasan penolakan tidak boleh kosong.', 'danger');
+                } else {
+                    $result = $peminjamanModel->updatePeminjamanStatusAndKeterangan($peminjamanId, $status, $keterangan);
+                    
+                    if ($result > 0) {
+                        if ($status === 'Disetujui') {
+                            $barangModel->kurangiStok($peminjaman['barang_id'], $peminjaman['jumlah_pinjam']);
+                            Flasher::setFlash('Berhasil!', 'Peminjaman berhasil disetujui dan stok barang telah dikurangi.', 'success');
+                        } else if ($status === 'Ditolak') {
+                            Flasher::setFlash('Berhasil!', 'Peminjaman berhasil ditolak.', 'success');
+                        }
+                    } else {
+                        Flasher::setFlash('Gagal!', 'Terjadi kesalahan saat memperbarui status.', 'danger');
+                    }
+                }
+            } else {
+                 Flasher::setFlash('Gagal!', 'Permintaan peminjaman tidak valid atau sudah diproses.', 'danger');
+            }
+        } else {
+            Flasher::setFlash('Gagal!', 'Permintaan tidak valid.', 'danger');
+        }
+        header('Location: ' . BASEURL . '/guru/verifikasi');
+        exit;
+    }
 }

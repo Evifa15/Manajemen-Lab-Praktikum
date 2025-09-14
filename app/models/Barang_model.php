@@ -251,4 +251,42 @@ public function countAllBarang($filters = []) {
         $this->db->execute();
         return $this->db->rowCount();
     }
+    /**
+ * Mengurangi stok barang dan memperbarui statusnya secara otomatis.
+ */
+public function kurangiStok($id, $jumlah) {
+    $this->db->beginTransaction();
+    try {
+        $query = "UPDATE {$this->table} SET jumlah = jumlah - :jumlah WHERE id = :id";
+        $this->db->query($query);
+        $this->db->bind(':jumlah', $jumlah);
+        $this->db->bind(':id', $id);
+        $this->db->execute();
+
+        // Ambil data barang yang baru
+        $barang = $this->getBarangById($id);
+        if ($barang) {
+            $jumlah_baru = $barang['jumlah'];
+            $status_baru = '';
+            if ($jumlah_baru <= 0) {
+                $status_baru = 'Tidak Tersedia';
+            } elseif ($jumlah_baru >= 1 && $jumlah_baru <= 3) {
+                $status_baru = 'Terbatas';
+            } else {
+                $status_baru = 'Tersedia';
+            }
+            // Perbarui status otomatis
+            $this->db->query("UPDATE {$this->table} SET status = :status WHERE id = :id");
+            $this->db->bind(':status', $status_baru);
+            $this->db->bind(':id', $id);
+            $this->db->execute();
+        }
+
+        $this->db->commit();
+        return $this->db->rowCount();
+    } catch (Exception $e) {
+        $this->db->rollBack();
+        return 0;
+    }
+}
 }

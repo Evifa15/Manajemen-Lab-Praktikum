@@ -108,25 +108,54 @@ class Peminjaman_model {
     /**
      * Mengambil riwayat peminjaman untuk satu siswa (dengan paginasi).
      */
-    public function getHistoryByUserId($userId, $offset, $limit) {
-        $query = "SELECT p.*, b.nama_barang FROM {$this->table} p JOIN barang b ON p.barang_id = b.id WHERE p.user_id = :user_id ORDER BY p.tanggal_pinjam DESC LIMIT :offset, :limit";
-        $this->db->query($query);
-        $this->db->bind('user_id', $userId);
-        $this->db->bind('offset', $offset, PDO::PARAM_INT);
-        $this->db->bind('limit', $limit, PDO::PARAM_INT);
-        return $this->db->resultSet();
+   public function getHistoryByUserId($userId, $offset, $limit, $keyword = null) {
+    $query = "SELECT p.*, b.nama_barang, b.kode_barang 
+              FROM {$this->table} p 
+              JOIN barang b ON p.barang_id = b.id 
+              WHERE p.user_id = :user_id";
+
+    if (!empty($keyword)) {
+        $query .= " AND (b.nama_barang LIKE :keyword OR b.kode_barang LIKE :keyword OR p.keperluan LIKE :keyword)";
     }
+
+    $query .= " ORDER BY p.tanggal_pinjam DESC 
+                LIMIT :offset, :limit";
+
+    $this->db->query($query);
+    $this->db->bind('user_id', $userId);
+    $this->db->bind('offset', (int)$offset, PDO::PARAM_INT);
+    $this->db->bind('limit', (int)$limit, PDO::PARAM_INT);
+
+    if (!empty($keyword)) {
+        $this->db->bind(':keyword', "%" . $keyword . "%");
+    }
+
+    return $this->db->resultSet();
+}
     
     /**
      * Menghitung total riwayat peminjaman untuk satu siswa.
      */
-    public function countHistoryByUserId($userId) {
-        $query = "SELECT COUNT(id) as total FROM {$this->table} WHERE user_id = :user_id";
-        $this->db->query($query);
-        $this->db->bind('user_id', $userId);
-        $result = $this->db->single();
-        return $result['total'] ?? 0;
+    public function countHistoryByUserId($userId, $keyword = null) {
+    $query = "SELECT COUNT(p.id) as total 
+              FROM {$this->table} p 
+              JOIN barang b ON p.barang_id = b.id 
+              WHERE p.user_id = :user_id";
+
+    if (!empty($keyword)) {
+        $query .= " AND (b.nama_barang LIKE :keyword OR b.kode_barang LIKE :keyword OR p.keperluan LIKE :keyword)";
     }
+
+    $this->db->query($query);
+    $this->db->bind('user_id', $userId);
+
+    if (!empty($keyword)) {
+        $this->db->bind(':keyword', "%" . $keyword . "%");
+    }
+
+    $result = $this->db->single();
+    return $result['total'] ?? 0;
+}
 
     /**
      * Mengambil semua riwayat peminjaman (untuk Laporan Admin).
@@ -297,5 +326,17 @@ class Peminjaman_model {
     $result = $this->db->single();
     return $result ? (int)$result['total'] : 0;
 }
+/**
+     * Memperbarui status dan keterangan peminjaman.
+     */
+    public function updatePeminjamanStatusAndKeterangan($id, $status, $keterangan = null) {
+        $query = "UPDATE {$this->table} SET status = :status, keterangan = :keterangan WHERE id = :id";
+        $this->db->query($query);
+        $this->db->bind('id', $id);
+        $this->db->bind('status', $status);
+        $this->db->bind('keterangan', $keterangan);
+        $this->db->execute();
+        return $this->db->rowCount();
+    }
 }
 
