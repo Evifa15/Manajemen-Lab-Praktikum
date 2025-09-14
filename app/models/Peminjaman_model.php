@@ -109,10 +109,10 @@ class Peminjaman_model {
      * Mengambil riwayat peminjaman untuk satu siswa (dengan paginasi).
      */
    public function getHistoryByUserId($userId, $offset, $limit, $keyword = null) {
-    $query = "SELECT p.*, b.nama_barang, b.kode_barang 
-              FROM {$this->table} p 
-              JOIN barang b ON p.barang_id = b.id 
-              WHERE p.user_id = :user_id";
+    $query = "SELECT p.*, b.nama_barang, b.kode_barang
+          FROM {$this->table} p 
+          JOIN barang b ON p.barang_id = b.id 
+          WHERE p.user_id = :user_id";
 
     if (!empty($keyword)) {
         $query .= " AND (b.nama_barang LIKE :keyword OR b.kode_barang LIKE :keyword OR p.keperluan LIKE :keyword)";
@@ -338,5 +338,28 @@ class Peminjaman_model {
         $this->db->execute();
         return $this->db->rowCount();
     }
+    public function updatePengembalian($data) {
+    $query = "UPDATE {$this->table} SET 
+                tanggal_kembali = :tanggal_kembali,
+                status_pengembalian = :status_pengembalian,
+                status = :status,
+                bukti_kembali = :bukti_kembali
+              WHERE id = :id";
+    $this->db->query($query);
+    $this->db->bind('id', $data['id']);
+    $this->db->bind('tanggal_kembali', $data['tanggal_kembali']);
+    $this->db->bind('status_pengembalian', $data['status_pengembalian']);
+    $this->db->bind('status', $data['status']);
+    $this->db->bind('bukti_kembali', $data['bukti_kembali']);
+    $this->db->execute();
+    return $this->db->rowCount();
+}
+public function getPeminjamanByIdAndUserId($id, $userId) {
+    $this->db->query("SELECT * FROM {$this->table} WHERE id = :id AND user_id = :user_id");
+    $this->db->bind('id', $id, PDO::PARAM_INT);
+    $this->db->bind('user_id', $userId, PDO::PARAM_INT);
+    return $this->db->single();
+}
+
 }
 

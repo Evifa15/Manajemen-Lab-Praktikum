@@ -216,6 +216,15 @@ elseif ($controller === 'siswa') {
     }
     elseif ($method === 'change-password') {
         $siswaController->changePassword();
+    } elseif ($method === 'pengembalian' && !empty($param1)) {
+        $siswaController->pengembalianBarang($param1);
+    } elseif ($method === 'proses-pengembalian') {
+        $siswaController->prosesPengembalian();
+    } elseif ($method === 'riwayat') {
+        $halaman = $param1 ?? 1;
+        $siswaController->riwayatPeminjaman($halaman);
+   } elseif ($method === 'get-peminjaman-by-id' && !empty($param1)) {
+        $siswaController->getPeminjamanById($param1);
     }
     else {
         http_response_code(404);

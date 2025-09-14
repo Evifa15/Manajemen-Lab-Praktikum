@@ -8,6 +8,10 @@
                 </button>
             </form>
         </div>
+        
+        <h3>Riwayat Peminjaman</h3>
+        <p>Berikut adalah riwayat pengajuan dan peminjaman barang Anda.</p>
+
         <div class="table-wrapper" style="margin-top: 20px;">
             <?php Flasher::flash(); ?>
             <table>
@@ -50,21 +54,25 @@
                                     </span>
                                 </td>
                                 <td class="action-buttons">
-                                    <button class="btn btn-secondary" 
-                                            <?= ($item['status'] == 'Disetujui') ? '' : 'disabled'; ?>
-                                            title="Pengembalian">Pengembalian</button>
+                                    <?php if ($item['status'] === 'Disetujui'): ?>
+                                        <button type="button" class="btn-icon pengembalian-btn" data-id="<?= $item['id']; ?>" title="Ajukan Pengembalian">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-log-out"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                        </button>
+                                    <?php else: ?>
+                                        -
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="9" style="text-align:center;">Tidak ada riwayat peminjaman saat ini.</td>
+                            <td colspan="8" style="text-align:center;">Tidak ada riwayat peminjaman saat ini.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
             </table>
         </div>
-
+        
         <?php if (isset($data['total_halaman']) && $data['total_halaman'] > 1): ?>
         <div class="pagination-container">
             <?php $queryParams = http_build_query(['search' => $data['keyword'] ?? '']); ?>
@@ -91,4 +99,8 @@
     .status-menunggu-verifikasi { background-color: #F59E0B; }
     .status-disetujui { background-color: #16A34A; }
     .status-ditolak { background-color: #DC2626; }
+    /* ✅ Tambahan untuk status baru */
+    .status-selesai { background-color: #16A34A; }
+    .status-terlambat { background-color: #DC2626; }
+    .status-tepat-waktu { background-color: #16A34A; }
 </style>

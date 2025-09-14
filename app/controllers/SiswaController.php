@@ -188,15 +188,28 @@ class SiswaController {
     /** 
     * Menampilkan halaman pengembalian barang.
     */
-    public function pengembalianBarang() {
-        $this->checkAuth();
-        $data = [
-            'title' => 'Pengembalian Barang',
-            'username' => $_SESSION['username']
-        ];
-        $this->view('siswa/pengembalian_barang', $data);
+   public function pengembalianBarang($peminjamanId = null) {
+    $this->checkAuth();
+    $peminjamanModel = new Peminjaman_model();
+    $barangModel = new Barang_model();
+
+    $data_peminjaman = $peminjamanModel->getPeminjamanByIdAndUserId($peminjamanId, $_SESSION['user_id']); // ✅ Perbaikan di sini
+
+    if (!$data_peminjaman || $data_peminjaman['status'] !== 'Disetujui') {
+        Flasher::setFlash('Gagal!', 'Peminjaman tidak valid atau belum disetujui.', 'danger');
+        header('Location: ' . BASEURL . '/siswa/riwayat');
+        exit;
     }
 
+    $data = [
+        'title' => 'Form Pengembalian',
+        'username' => $_SESSION['username'],
+        'peminjaman' => $data_peminjaman,
+        'barang' => $barangModel->getBarangById($data_peminjaman['barang_id'])
+    ];
+
+    $this->view('siswa/pengembalian_barang', $data);
+}
     /**
      * Menampilkan riwayat peminjaman barang untuk siswa yang sedang login.
      */
@@ -280,4 +293,71 @@ class SiswaController {
         require_once '../app/views/' . $view . '.php';
         require_once '../app/views/layouts/siswa_footer.php';
     }
+    public function prosesPengembalian() {
+        $this->checkAuth();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['peminjaman_id']) && isset($_FILES['bukti_kembali'])) {
+            $peminjamanModel = new Peminjaman_model();
+            $barangModel = new Barang_model();
+            
+            // Logika upload foto bukti pengembalian
+            $namaFoto = null;
+            if ($_FILES['bukti_kembali']['error'] === UPLOAD_ERR_OK) {
+                $file = $_FILES['bukti_kembali'];
+                $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                $namaFotoBaru = 'bukti_' . uniqid() . '.' . $ext;
+                $targetDir = APP_ROOT . '/public/img/bukti_kembali/';
+                if (move_uploaded_file($file['tmp_name'], $targetDir . $namaFotoBaru)) {
+                    $namaFoto = $namaFotoBaru;
+                }
+            }
+            
+            // Ambil data peminjaman untuk perbandingan tanggal
+            $peminjaman = $peminjamanModel->getPeminjamanById($_POST['peminjaman_id']);
+            $tanggal_wajib_kembali = strtotime($peminjaman['tanggal_wajib_kembali']);
+            $tanggal_sekarang = strtotime(date('Y-m-d'));
+            
+            // Tentukan status pengembalian (Tepat Waktu atau Terlambat)
+            $status_pengembalian = ($tanggal_sekarang <= $tanggal_wajib_kembali) ? 'Tepat Waktu' : 'Terlambat';
+            
+            $data = [
+                'id' => $_POST['peminjaman_id'],
+                'barang_id' => $peminjaman['barang_id'],
+                'jumlah_pinjam' => $peminjaman['jumlah_pinjam'],
+                'tanggal_kembali' => date('Y-m-d'),
+                'bukti_kembali' => $namaFoto,
+                'status_pengembalian' => $status_pengembalian,
+                'status' => 'Selesai'
+            ];
+            
+            // Panggil model untuk mengupdate database
+            if ($peminjamanModel->updatePengembalian($data) > 0) {
+                // Jika berhasil, panggil model barang untuk menambah stok
+                $barangModel->tambahStok($data['barang_id'], $data['jumlah_pinjam']);
+                Flasher::setFlash('Berhasil!', 'Pengembalian barang berhasil dicatat.', 'success');
+            } else {
+                Flasher::setFlash('Gagal!', 'Terjadi kesalahan saat memproses pengembalian.', 'danger');
+            }
+        } else {
+            Flasher::setFlash('Gagal!', 'Permintaan tidak valid.', 'danger');
+        }
+        header('Location: ' . BASEURL . '/siswa/riwayat');
+        exit;
+    }
+public function getPeminjamanById($id) {
+    header('Content-Type: application/json');
+    $peminjamanModel = new Peminjaman_model();
+    $barangModel = new Barang_model();
+
+    $peminjaman = $peminjamanModel->getPeminjamanByIdAndUserId($id, $_SESSION['user_id']);
+
+    if ($peminjaman) {
+        $barang = $barangModel->getBarangById($peminjaman['barang_id']);
+        $peminjaman['nama_barang'] = $barang['nama_barang'];
+        $peminjaman['kode_barang'] = $barang['kode_barang'];
+        echo json_encode($peminjaman);
+    } else {
+        echo json_encode(null);
+    }
+    exit;
+}
 }

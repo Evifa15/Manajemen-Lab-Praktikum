@@ -289,4 +289,19 @@ public function kurangiStok($id, $jumlah) {
         return 0;
     }
 }
+public function tambahStok($id, $jumlah) {
+    $this->db->beginTransaction();
+    try {
+        $query = "UPDATE {$this->table} SET jumlah = jumlah + :jumlah WHERE id = :id";
+        $this->db->query($query);
+        $this->db->bind('id', $id);
+        $this->db->bind('jumlah', $jumlah);
+        $this->db->execute();
+        $this->db->commit();
+        return $this->db->rowCount();
+    } catch (Exception $e) {
+        $this->db->rollBack();
+        return 0;
+    }
+}
 }
